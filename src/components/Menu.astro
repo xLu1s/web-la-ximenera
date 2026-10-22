@@ -1,0 +1,94 @@
+---
+import { Image } from 'astro:assets';
+import { menu, allergenLabels, type Allergen } from '../data/menu';
+import { menuDelDia } from '../data/menuDelDia';
+import { instagram, instagramCredit } from '../data/gallery';
+// Fotos oficiales del Instagram @laximenera_restaurante (posts en src/data/gallery.ts)
+import ig03 from '../assets/instagram/ig-03.jpg';
+import ig06 from '../assets/instagram/ig-06.jpg';
+import ig01 from '../assets/instagram/ig-01.jpg';
+const highlights = [
+  { src: ig03, name: 'De nuestras brasas', alt: 'Carne a la brasa con verduras' },
+  { src: ig06, name: 'Tartar de atún', alt: 'Tartar de atún con algas' },
+  { src: ig01, name: 'Mejillones', alt: 'Cazuela de mejillones' },
+];
+const usedAllergens = [...new Set(menu.flatMap((s) => s.items.flatMap((i) => i.allergens ?? [])))] as Allergen[];
+const count = menu.reduce((n, s) => n + s.items.length, 0);
+---
+<section id="carta" class="section menu" aria-labelledby="menu-title">
+  <div class="container">
+    <div class="menu__top">
+      <div class="section__head reveal">
+        <p class="eyebrow">La carta</p>
+        <h2 id="menu-title">Nuestra <em>carta</em></h2>
+        <p class="section__intro">Producto de mercado, brasa y platos para compartir. {count} propuestas, de los fríos a nuestros postres caseros.</p>
+      </div>
+      <ul class="highlights reveal" role="list" style="--d:.1s">
+        {highlights.map((h) => (
+          <li class="highlight">
+            <Image src={h.src} widths={[240, 480]} sizes="(min-width: 900px) 200px, 31vw" alt={h.alt} />
+            <div class="highlight__body"><span class="highlight__name">{h.name}</span></div>
+          </li>
+        ))}
+      </ul>
+    </div>
+    <p class="highlights__credit"><a href={instagram.url} target="_blank" rel="noopener">{instagramCredit}</a></p>
+
+    <div class="tabs reveal" role="tablist" aria-label="Secciones de la carta" data-menu-tabs>
+      {menu.map((s, i) => (
+        <button role="tab" type="button" class="tab" id={`tab-${s.id}`} aria-controls={`panel-${s.id}`} aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1}>{s.tab}</button>
+      ))}
+    </div>
+
+    <div class="carta reveal">
+      {menu.map((s, i) => (
+        <div class="carta__panel" role="tabpanel" id={`panel-${s.id}`} aria-labelledby={`tab-${s.id}`} data-active={i === 0 ? 'true' : 'false'}>
+          <header class="carta__head">
+            {s.subtitle && <p class="carta__sub">{s.subtitle}</p>}
+            <h3>{s.title}</h3>
+            {s.intro && <p class="carta__intro">{s.intro}</p>}
+          </header>
+          <ul class="carta__list" role="list">
+            {s.items.map((it) => (
+              <li class="carta__item">
+                <span class="carta__name">
+                  {it.name}
+                  {it.allergens?.map((a) => <span class={`alg alg--${a}`} title={allergenLabels[a]}><span class="sr-only">Alérgeno: </span>{allergenLabels[a]}</span>)}
+                </span>
+                <span class="carta__dots" aria-hidden="true"></span>
+                <span class="carta__price">
+                  {it.half && <span class="carta__half">½ {it.half}</span>}
+                  {it.price ?? <span class="carta__noprice">consultar</span>}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {s.notes?.map((n) => <p class="carta__note">{n}</p>)}
+        </div>
+      ))}
+      <p class="carta__legend">
+        <span>Iconos de la carta:</span>
+        {usedAllergens.map((a) => <span class={`alg alg--${a}`}>{allergenLabels[a]}</span>)}
+        <span class="carta__legend-note">½ = media ración · S/M = según mercado · Consulta cualquier alergia o intolerancia con nuestro equipo.</span>
+      </p>
+    </div>
+
+    <div class="menu-day reveal">
+      <div class="menu-day__intro">
+        <p class="eyebrow">{menuDelDia.days.replace('Menú de ', '')}</p>
+        <h3>Menú del día</h3>
+        <p class="menu-day__price">{menuDelDia.price.replace('.', ',').replace('€', ' €')}</p>
+        <p class="menu-day__note">{menuDelDia.priceNote}</p>
+        <a class="btn btn--outline" href="#contacto">Reserva tu mesa</a>
+      </div>
+      <div class="menu-day__courses">
+        {menuDelDia.courses.map((c) => (
+          <div class="menu-day__course">
+            <h4>{c.title}</h4>
+            <ul role="list">{c.items.map((i) => <li>{i}</li>)}</ul>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>
