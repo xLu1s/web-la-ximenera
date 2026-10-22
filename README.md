@@ -29,7 +29,7 @@ npm run preview  # sirve dist/ (respeta el base)
 
 ## Publicación en GitHub Pages
 
-El workflow `.github/workflows/deploy.yml` usa Node 22. Se lanza al hacer push a `main` y también a mano (`workflow_dispatch`). Instala con `npm ci`, ejecuta `npm run build` y publica `dist/` con GitHub Actions. El paso `actions/configure-pages` lleva `enablement: true` para intentar activar Pages si aún no lo está.
+El workflow `.github/workflows/deploy.yml` usa Node 22.23.4 (Astro 7 pide >= 22.23.4; la etiqueta genérica `22` en los runners de GitHub se queda en 22.23.3 y el build falla). Se lanza al hacer push a `main` y también a mano (`workflow_dispatch`). Instala con `npm ci`, ejecuta `npm run build` y publica `dist/` con GitHub Actions. El paso `actions/configure-pages` lleva `enablement: true` para intentar activar Pages si aún no lo está.
 
 Antes del primer despliegue, en el repositorio:
 
