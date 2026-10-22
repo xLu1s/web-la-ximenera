@@ -15,6 +15,9 @@ export const site = {
   name: 'La Ximenera',
   phoneDisplay: '681 14 37 95', // [lead][TA][PLA] coincide en todas las fuentes
   phoneE164: '+34681143795',
+  phoneIntl: '+34 681 14 37 95',
+  // WhatsApp CONFIRMADO por Luis (22/10/2026): el mismo número atiende por WhatsApp.
+  whatsapp: 'https://wa.me/34681143795',
   // Dirección CONFIRMADA por Luis (22/10/2026). [PLA] la sitúa en el ático del nº 2 ("La Ximenera - Rooftop");
   // [EMP] domicilio social C/ Regiment Biscaia 2. (La antigua Carrer Alcoleja 7 sigue en directorios sin actualizar.)
   address: { street: 'C/ Regiment Biscaia, 2, Ático', postalCode: '03802', city: 'Alcoy (Alcoi)', locality: 'Alcoy', region: 'Alicante' },

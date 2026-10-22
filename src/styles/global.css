@@ -117,10 +117,14 @@ p { margin: 0 0 1em; }
 .facts { list-style: none; padding: 0; margin: 2rem 0 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; border-top: 1px solid rgb(107 74 51 / .25); padding-top: 1.5rem; }
 .facts strong { display: block; font-family: var(--font-display); font-size: 1.7rem; font-weight: 600; color: var(--walnut); line-height: 1.1; }
 .facts span { font-size: .82rem; color: var(--muted); }
-.about__photo { margin: 0; position: relative; }
-.about__photo::before { content: ''; position: absolute; inset: 1.25rem -1.25rem -1.25rem 1.25rem; border: 1px solid var(--gold); z-index: -1; }
-.about__photo img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; box-shadow: var(--shadow); }
-.about__photo figcaption, .gallery__credit { font-size: .76rem; color: var(--muted); margin-top: 1.6rem; }
+.about__photo { --frame-offset: 1.25rem; margin: 0 var(--frame-offset) 0 0; }
+/* Marco dorado: mismo tamaño que la foto, desplazado abajo-derecha. El pie queda fuera, debajo. */
+.about__frame { position: relative; isolation: isolate; }
+.about__frame::before { content: ''; position: absolute; inset: 0; transform: translate(var(--frame-offset), var(--frame-offset)); border: 1px solid var(--gold); z-index: -1; pointer-events: none; }
+.about__photo img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; box-shadow: var(--shadow); }
+.about__photo figcaption { margin-top: calc(var(--frame-offset) + .75rem); }
+.about__photo figcaption, .gallery__credit { font-size: .76rem; color: var(--muted); }
+.gallery__credit { margin-top: 1.6rem; }
 
 /* Carta */
 .menu { background: var(--sand); }
@@ -194,6 +198,9 @@ address { font-style: normal; font-family: var(--font-display); font-size: 1.7re
 .contact h2 { color: var(--cream); font-size: clamp(2.6rem, 7vw, 4.6rem); }
 .contact__box { max-width: 760px; }
 .contact__actions { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; margin: 2rem 0 1.5rem; }
+.contact__phone { color: var(--gold); font-weight: 700; white-space: nowrap; }
+.contact__extra { font-size: .9rem; opacity: .8; }
+.contact__extra a { color: var(--gold); }
 
 /* Footer */
 .footer { background: #20150e; color: rgb(247 241 230 / .78); padding: 3.5rem 0 6.5rem; font-size: .95rem; border-top: 1px solid rgb(201 165 92 / .25); }
@@ -224,7 +231,7 @@ address { font-style: normal; font-family: var(--font-display); font-size: 1.7re
 .map iframe { position: relative; }
 @media (max-width: 600px) {
   .about__photo img { aspect-ratio: 4 / 3; }
-  .about__photo::before { inset: .75rem -.6rem -.75rem .75rem; }
+  .about__photo { --frame-offset: .75rem; }
   .hours__table th { font-size: 1.12rem; padding-inline: .2rem; }
   .hours__table td { white-space: nowrap; font-size: .88rem; padding-inline: .2rem; }
   .hours__table tr.is-today th::after { content: ''; }
