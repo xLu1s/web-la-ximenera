@@ -1,0 +1,22 @@
+---
+import { site } from '../data/site';
+import { publicUrl } from '../lib/base';
+---
+<header class="header" data-header>
+  <div class="container header__inner">
+    <a href="#inicio" class="brand" aria-label="La Ximenera, inicio">
+      <img src={publicUrl('logo.svg')} alt="" width="36" height="36" />
+      <span>La Ximenera</span>
+    </a>
+    <button class="nav-toggle" aria-expanded="false" aria-controls="menu-principal" data-nav-toggle>
+      <span class="sr-only">Abrir menú</span><span class="nav-toggle__bar"></span>
+    </button>
+    <nav id="menu-principal" class="nav" aria-label="Principal" data-nav>
+      <a href="#nosotros">Nosotros</a>
+      <a href="#carta">Carta</a>
+      <a href="#horario">Horario</a>
+      <a href="#ubicacion">Ubicación</a>
+      <a class="btn btn--small" href={`tel:${site.phoneE164}`}>Reservar</a>
+    </nav>
+  </div>
+</header>

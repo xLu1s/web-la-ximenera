@@ -1,0 +1,6 @@
+---
+/** Marcador visible de dato pendiente de confirmar con el negocio. */
+interface Props { label: string; block?: boolean }
+const { label, block = false } = Astro.props;
+---
+<span class:list={['tbc', { 'tbc--block': block }]} title="Dato pendiente de confirmar con el negocio">[{label}]</span>

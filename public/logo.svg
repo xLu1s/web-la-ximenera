@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="La Ximenera">
+  <path d="M33 6c4 3 3 7-1 9s-4 6 0 8" fill="none" stroke="#C9A55C" stroke-width="3" stroke-linecap="round"/>
+  <path d="M25 24h14l3 34H22z" fill="#8A5A3B"/>
+  <path d="M23.6 40h16.8M23 49h18M24.4 31h15.2" stroke="#F7F1E6" stroke-width="1.6" opacity=".5"/>
+  <rect x="22" y="21" width="20" height="4" rx="1" fill="#C9A55C"/>
+</svg>

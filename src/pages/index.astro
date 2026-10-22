@@ -1,0 +1,32 @@
+---
+import Base from '../layouts/Base.astro';
+import Header from '../components/Header.astro';
+import Hero from '../components/Hero.astro';
+import About from '../components/About.astro';
+import Menu from '../components/Menu.astro';
+import Gallery from '../components/Gallery.astro';
+import Hours from '../components/Hours.astro';
+import Reviews from '../components/Reviews.astro';
+import Location from '../components/Location.astro';
+import Contact from '../components/Contact.astro';
+import Footer from '../components/Footer.astro';
+import FloatingCall from '../components/FloatingCall.astro';
+---
+<Base
+  title="La Ximenera Rooftop · Restaurante en Alcoi (Alcoy) · Brasería mediterránea"
+  description="La Ximenera Rooftop, restaurante en Alcoi (Alcoy, Alicante): brasería mediterránea y cocina de producto en un ático con terraza. Carta, menú del día y reservas en el 681 14 37 95."
+>
+  <Header />
+  <main id="contenido">
+    <Hero />
+    <About />
+    <Menu />
+    <Gallery />
+    <Hours />
+    <Reviews />
+    <Location />
+    <Contact />
+  </main>
+  <Footer />
+  <FloatingCall />
+</Base>

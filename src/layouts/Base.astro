@@ -1,0 +1,79 @@
+---
+import '../styles/global.css';
+import { site } from '../data/site';
+import { publicUrl } from '../lib/base';
+
+interface Props { title: string; description: string }
+const { title, description } = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const ogImage = new URL(publicUrl('og-image.jpg'), Astro.site);
+const menuUrl = new URL(publicUrl('#carta'), Astro.site);
+
+// JSON-LD: solo datos confirmados (dirección y horario confirmados por Luis el 22/10/2026).
+// geo: ficha de Google Maps "La Ximenera - Rooftop". Sin aggregateRating: Google no admite valoraciones
+// "self-serving" (tomadas de terceros y publicadas por el propio negocio) en LocalBusiness/Restaurant.
+// TODO: priceRange cuando se confirme.
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Restaurant',
+  name: site.name,
+  alternateName: 'La Ximenera - Rooftop',
+  description: 'Un nuevo espacio singular con encanto. Brasería mediterránea y cocina de producto. Rooftop. Alcoi/Alcoy',
+  image: ogImage.href,
+  url: canonical.href,
+  telephone: site.phoneE164,
+  servesCuisine: ['Mediterránea', 'Cocina de mercado', 'Brasa'],
+  acceptsReservations: true,
+  hasMenu: menuUrl.href,
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: 'C/ Regiment Biscaia, 2, Ático',
+    postalCode: '03802',
+    addressLocality: 'Alcoy',
+    addressRegion: 'Alicante',
+    addressCountry: 'ES',
+  },
+  geo: { '@type': 'GeoCoordinates', latitude: site.geo.lat, longitude: site.geo.lng },
+  hasMap: site.mapsLink,
+  sameAs: [site.instagram, site.facebook],
+  openingHoursSpecification: [
+    { '@type': 'OpeningHoursSpecification', dayOfWeek: ['Tuesday', 'Wednesday', 'Thursday', 'Friday'], opens: '13:30', closes: '16:00' },
+    { '@type': 'OpeningHoursSpecification', dayOfWeek: ['Tuesday', 'Wednesday', 'Thursday', 'Friday'], opens: '20:30', closes: '23:00' },
+    { '@type': 'OpeningHoursSpecification', dayOfWeek: 'Saturday', opens: '12:30', closes: '16:30' },
+    { '@type': 'OpeningHoursSpecification', dayOfWeek: 'Saturday', opens: '20:00', closes: '23:59' },
+    { '@type': 'OpeningHoursSpecification', dayOfWeek: 'Sunday', opens: '13:00', closes: '16:00' },
+  ],
+};
+---
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="theme-color" content="#2B1D14" />
+    <link rel="icon" type="image/svg+xml" href={publicUrl('logo.svg')} />
+
+    <meta property="og:type" content="restaurant.restaurant" />
+    <meta property="og:locale" content="es_ES" />
+    <meta property="og:site_name" content="La Ximenera" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet" />
+
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  </head>
+  <body>
+    <a class="skip-link" href="#contenido">Saltar al contenido</a>
+    <slot />
+    <script src="../scripts/main.ts"></script>
+  </body>
+</html>

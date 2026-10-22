@@ -1,0 +1,14 @@
+---
+import { site } from '../data/site';
+import { publicUrl } from '../lib/base';
+const year = new Date().getFullYear();
+---
+<footer class="footer">
+  <div class="container footer__inner">
+    <div class="brand brand--footer"><img src={publicUrl('logo.svg')} alt="" width="32" height="32" /><span>La Ximenera</span></div>
+    <p>{site.address.street}, {site.address.postalCode} {site.address.city}, {site.address.region} · <a href={`tel:${site.phoneE164}`}>{site.phoneDisplay}</a></p>
+    <p class="footer__social"><a href={site.instagram} target="_blank" rel="noopener">Instagram @laximenera_restaurante</a> · <a href={site.facebook} target="_blank" rel="noopener">Facebook</a></p>
+    <p class="footer__small">© {year} La Ximenera · Restaurante en Alcoi · <a href="#">[Aviso legal y privacidad por confirmar]</a></p>
+    <p class="footer__small">Web de demostración. Fotos de @laximenera_restaurante y, marcadas como provisionales, fotos públicas de clientes. Los datos entre corchetes están pendientes de confirmar.</p>
+  </div>
+</footer>
