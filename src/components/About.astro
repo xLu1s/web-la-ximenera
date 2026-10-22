@@ -1,6 +1,5 @@
 ---
 import { Image } from 'astro:assets';
-import Tbc from './Tbc.astro';
 import { instagram, instagramCredit } from '../data/gallery';
 // Foto oficial del Instagram @laximenera_restaurante: https://www.instagram.com/p/DcqG3KRI_a1/
 import foto from '../assets/instagram/ig-05.jpg';
@@ -14,7 +13,6 @@ import foto from '../assets/instagram/ig-05.jpg';
       <p>En nuestras brasas trabajamos con carnes y pescados nacionales, acompañados de verduras de temporada y patatas baby.</p>
       <p>Nuestros clientes destacan la sala amplia, con la bodega a la vista, y la terraza exterior.</p>
       <p>Nuestro nombre —<em>ximenera</em>, chimenea en valenciano— rinde homenaje a las chimeneas que dibujan el perfil industrial de Alcoi.</p>
-      <p><Tbc label="Historia del restaurante, equipo y chef por confirmar" /></p>
       <ul class="facts" role="list">
         <li><strong>Brasería</strong><span>mediterránea</span></li>
         <li><strong>Producto</strong><span>carnes y pescados nacionales</span></li>
@@ -22,7 +20,9 @@ import foto from '../assets/instagram/ig-05.jpg';
       </ul>
     </div>
     <figure class="about__photo reveal" style="--d:.15s">
-      <Image src={foto} widths={[400, 640]} sizes="(min-width: 860px) 40vw, 90vw" alt="Carne de vaca a la brasa trinchada sobre tabla con verduras" />
+      <div class="about__frame">
+        <Image src={foto} widths={[400, 640]} sizes="(min-width: 860px) 40vw, 90vw" alt="Carne de vaca a la brasa trinchada sobre tabla con verduras" />
+      </div>
       <figcaption><a href={instagram.url} target="_blank" rel="noopener">{instagramCredit}</a></figcaption>
     </figure>
   </div>

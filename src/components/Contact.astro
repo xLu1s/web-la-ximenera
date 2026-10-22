@@ -1,16 +1,14 @@
 ---
 import { site } from '../data/site';
-import Tbc from './Tbc.astro';
 ---
 <section id="contacto" class="section contact" aria-labelledby="contact-title">
   <div class="container contact__box reveal">
     <h2 id="contact-title">¿Reservamos mesa?</h2>
-    <p>Llámanos y te guardamos sitio. Para grupos grandes, avísanos con antelación.</p>
+    <p>Llámanos o escríbenos por WhatsApp al <a class="contact__phone" href={`tel:${site.phoneE164}`}>{site.phoneIntl}</a> y te guardamos sitio. Para grupos grandes, avísanos con antelación.</p>
     <div class="contact__actions">
       <a class="btn btn--gold" href={`tel:${site.phoneE164}`}>Llamar al {site.phoneDisplay}</a>
-      <a class="btn btn--ghost" href={site.instagram} target="_blank" rel="noopener">Instagram</a>
-      <a class="btn btn--ghost" href={site.facebook} target="_blank" rel="noopener">Facebook</a>
+      <a class="btn btn--ghost" href={site.whatsapp} target="_blank" rel="noopener">WhatsApp</a>
     </div>
-    <p class="contact__extra"><Tbc label="Email y reserva online por confirmar" /></p>
+    <p class="contact__extra">Síguenos en <a href={site.instagram} target="_blank" rel="noopener">Instagram</a> · <a href={site.facebook} target="_blank" rel="noopener">Facebook</a></p>
   </div>
 </section>
