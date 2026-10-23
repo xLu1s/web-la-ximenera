@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { startResendMock } from '../mocks/resend-mock.mjs';
-import { customerConfirmation, ownerNotification, sendEmail } from '../../src/lib/email';
+import { customerCancellation, customerConfirmation, ownerCancellation, ownerNotification, sendEmail } from '../../src/lib/email';
 
 let mock: { server: import('node:http').Server; emails: Record<string, unknown>[] };
 const summary = { reference: 'LX-ABC234', day: '2032-01-06', time: '13:30', service: 'comida', party_size: 4, name: 'Ana <b>Pérez</b>', email: 'ana@example.com', phone: '600123123', notes: 'Sin gluten' };
@@ -46,5 +46,10 @@ describe('emails (Resend simulado)', () => {
     process.env.RESEND_API_KEY = 're_live_wrong'; // el mock solo acepta re_test_*
     const r = await sendEmail(customerConfirmation(summary, 'u'));
     expect(r.sent).toBe(false);
+  });
+
+  it('ningún email menciona WhatsApp ni enlaza a wa.me', () => {
+    const all = [customerConfirmation(summary, 'https://x/c'), ownerNotification(summary, 'https://x/admin'), customerCancellation(summary), ownerCancellation(summary, 'cliente')];
+    for (const m of all) expect(JSON.stringify(m)).not.toMatch(/wa\.me|whatsapp/i);
   });
 });

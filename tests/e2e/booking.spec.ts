@@ -12,6 +12,18 @@ test.describe('Formulario público de reservas', () => {
     await expect(page.locator('#reservar a[href="tel:+34681143795"]')).toBeVisible();
   });
 
+  test('sin WhatsApp: ningún enlace wa.me ni mención en la web pública; el teléfono sigue en tel:', async ({ page, request }) => {
+    for (const path of ['/', '/privacidad', '/aviso-legal', '/cookies', '/reserva/cancelar?t=abc.def']) {
+      const html = await (await request.get(path)).text();
+      expect(html, path).not.toMatch(/wa\.me|whatsapp/i);
+    }
+    await page.goto('/');
+    await expect(page.locator('a[href*="wa.me"], a[href*="whatsapp" i]')).toHaveCount(0);
+    await expect(page.locator('.fab__btn')).toHaveCount(1);
+    await expect(page.locator('.fab__btn--call')).toHaveAttribute('href', 'tel:+34681143795');
+    await expect(page.locator('footer a[href="tel:+34681143795"]')).toBeVisible();
+  });
+
   test('reserva válida desde el formulario: confirmación, referencia y emails (cliente + propietario)', async ({ page, request }) => {
     await page.setExtraHTTPHeaders({ 'x-forwarded-for': uniqueIp() });
     const day = futureDate(200, TUE);

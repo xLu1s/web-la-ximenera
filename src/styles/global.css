@@ -214,7 +214,6 @@ address { font-style: normal; font-family: var(--font-display); font-size: 1.7re
 .fab__btn { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; color: #fff; box-shadow: 0 10px 24px -8px rgb(0 0 0 / .5); transition: transform .3s var(--ease); }
 .fab__btn:hover { transform: scale(1.08); }
 .fab__btn--call { background: var(--walnut); border: 1px solid var(--gold); }
-.fab__btn--wa { background: #1f8f4e; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

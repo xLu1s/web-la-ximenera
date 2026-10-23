@@ -26,7 +26,7 @@ test('capturas', async ({ page, request, browser }) => {
     await page.locator('#vinos').screenshot({ path: `${out}/vinos-provisional.png` });
     await page.locator('#reservar').scrollIntoViewIfNeeded();
     await page.locator('#reservar').screenshot({ path: `${out}/reserva-formulario-desktop.png` });
-    await hideHeader.evaluate((el) => el.remove());
+    await hideHeader.evaluate((el) => (el as Element).remove());
 
     const { defaultBrowserType: _d, ...pixel } = devices['Pixel 7'];
     const ctx = await browser.newContext({ ...pixel, reducedMotion: 'reduce', locale: 'es-ES', timezoneId: 'Europe/Madrid', extraHTTPHeaders: { 'x-forwarded-for': uniqueIp() } });
@@ -36,7 +36,7 @@ test('capturas', async ({ page, request, browser }) => {
     await fillBookingForm(m, { date: futureDate(300, TUE), party: 2, time: '14:00', email: 'captura@example.com', name: 'Cliente de ejemplo' });
     const mHide = await m.addStyleTag({ content: 'body > header, .header { visibility: hidden !important; }' });
     await m.locator('[data-booking-form]').screenshot({ path: `${out}/reserva-formulario-movil.png` });
-    await mHide.evaluate((el) => el.remove());
+    await mHide.evaluate((el) => (el as Element).remove());
     await m.getByRole('button', { name: 'Reservar', exact: true }).click();
     await expect(m.locator('[data-bk-ok]')).toBeVisible();
     await m.locator('[data-bk-ok]').screenshot({ path: `${out}/reserva-confirmada-movil.png` });
