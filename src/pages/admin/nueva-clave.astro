@@ -10,13 +10,27 @@ if (Astro.request.method === 'GET' && code) {
   if (e) error = 'El enlace no es válido o ha caducado. Pide uno nuevo.';
   else return Astro.redirect('/admin/nueva-clave', 303);
 } else if (Astro.request.method === 'GET' && tokenHash) {
-  const { error: e } = await sb.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' });
+  // Enlaces de recuperación y de invitación (plantilla de email con token_hash y type).
+  const type = Astro.url.searchParams.get('type') === 'invite' ? 'invite' : 'recovery';
+  const { error: e } = await sb.auth.verifyOtp({ token_hash: tokenHash, type });
   if (e) error = 'El enlace no es válido o ha caducado. Pide uno nuevo.';
   else return Astro.redirect('/admin/nueva-clave', 303);
 }
-const { data: { user } } = await sb.auth.getUser();
+// Enlaces con la plantilla por defecto de Supabase (invitación / recuperación en flujo implícito):
+// los tokens llegan en el #fragmento y el script de abajo los envía aquí por POST.
+let fd: FormData | null = null;
 if (Astro.request.method === 'POST') {
-  const fd = await Astro.request.formData();
+  fd = await Astro.request.formData();
+  const at = String(fd.get('access_token') ?? ''), rt = String(fd.get('refresh_token') ?? '');
+  if (at && rt) {
+    const { error: e } = await sb.auth.setSession({ access_token: at, refresh_token: rt });
+    if (e) error = 'El enlace no es válido o ha caducado. Pide uno nuevo.';
+    else return Astro.redirect('/admin/nueva-clave', 303);
+    fd = null;
+  }
+}
+const { data: { user } } = await sb.auth.getUser();
+if (fd) {
   const p1 = String(fd.get('password') ?? ''), p2 = String(fd.get('password2') ?? '');
   if (!user) error = 'La sesión de recuperación ha caducado. Pide un enlace nuevo.';
   else if (p1.length < 8) error = 'La contraseña debe tener al menos 8 caracteres.';
@@ -30,6 +44,22 @@ if (Astro.request.method === 'POST') {
 ---
 <Admin title="Nueva contraseña" bare>
   {error && <p class="adm__flash adm__flash--err" role="alert">{error}</p>}
+  <p class="adm__flash adm__flash--err" role="alert" data-hash-error hidden></p>
+  <form method="post" data-hash-form hidden><input type="hidden" name="access_token" /><input type="hidden" name="refresh_token" /></form>
+  <script is:inline>
+    (function () {
+      var h = new URLSearchParams(location.hash.slice(1));
+      if (!h.toString()) return;
+      history.replaceState(null, '', location.pathname);
+      var f = document.querySelector('[data-hash-form]');
+      if (h.get('access_token') && h.get('refresh_token') && f) {
+        f.access_token.value = h.get('access_token'); f.refresh_token.value = h.get('refresh_token'); f.submit();
+      } else if (h.get('error_description')) {
+        var el = document.querySelector('[data-hash-error]');
+        el.textContent = 'El enlace no es válido o ha caducado. Pide uno nuevo.'; el.hidden = false;
+      }
+    })();
+  </script>
   {user ? (
     <form method="post" class="card">
       <p class="help">Cuenta: {user.email}</p>

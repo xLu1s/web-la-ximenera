@@ -74,4 +74,48 @@ test.describe('Panel /admin: acceso', () => {
       await svc().auth.admin.updateUserById(u.id, { password: T.admin.password });
     }
   });
+
+  test('invitación por email: el enlace con token_hash permite elegir contraseña', async ({ page }) => {
+    const { svc } = await import('../helpers/db');
+    const email = `invitado-${Date.now()}@test.local`;
+    const { data, error } = await svc().auth.admin.generateLink({ type: 'invite', email });
+    expect(error).toBeNull();
+    try {
+      await page.goto(`/admin/nueva-clave?token_hash=${data.properties!.hashed_token}&type=invite`);
+      await expect(page.getByText(`Cuenta: ${email}`)).toBeVisible();
+      await page.getByLabel(/Contraseña nueva/).fill('Invitado-Clave-2026!');
+      await page.getByLabel('Repite la contraseña').fill('Invitado-Clave-2026!');
+      await page.getByRole('button', { name: 'Guardar contraseña' }).click();
+      // No está en `admins`: la cuenta existe pero el panel le niega el acceso.
+      await expect(page.getByText('No tienes permiso')).toBeVisible();
+      await page.goto('/admin/nueva-clave?token_hash=manipulado&type=invite');
+      await expect(page.getByRole('alert')).toContainText('no es válido');
+    } finally {
+      await svc().auth.admin.deleteUser(data.user!.id);
+    }
+  });
+
+  test('invitación con la plantilla por defecto de Supabase (tokens en el #fragmento)', async ({ page }) => {
+    const { svc } = await import('../helpers/db');
+    const email = `invitado2-${Date.now()}@test.local`;
+    const { data, error } = await svc().auth.admin.generateLink({
+      type: 'invite', email, options: { redirectTo: `http://localhost:${T.appPort}/admin/nueva-clave` },
+    });
+    expect(error).toBeNull();
+    try {
+      await page.goto(data.properties!.action_link);
+      await expect(page.getByText(`Cuenta: ${email}`)).toBeVisible();
+      expect(page.url()).not.toContain('access_token');
+      await page.getByLabel(/Contraseña nueva/).fill('Invitado-Clave-2026!');
+      await page.getByLabel('Repite la contraseña').fill('Invitado-Clave-2026!');
+      await page.getByRole('button', { name: 'Guardar contraseña' }).click();
+      await expect(page.getByText('No tienes permiso')).toBeVisible();
+      // Reutilizar el enlace no vale.
+      await page.context().clearCookies();
+      await page.goto(data.properties!.action_link);
+      await expect(page.locator('[data-hash-error]')).toBeVisible();
+    } finally {
+      await svc().auth.admin.deleteUser(data.user!.id);
+    }
+  });
 });
