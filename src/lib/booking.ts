@@ -13,7 +13,7 @@ export function bookingErrorMessage(code: string, extra: { max?: number; remaini
   switch (code) {
     case 'consent_required': return 'Para reservar debes aceptar la política de privacidad.';
     case 'party_too_small': return 'Indica al menos 1 persona.';
-    case 'party_too_large': return `Las reservas online admiten como máximo ${extra.max ?? MAX_PARTY_DEFAULT} personas. Para grupos más grandes, llámanos.`;
+    case 'party_too_large': return `Las reservas online admiten como máximo ${extra.max ?? MAX_PARTY_DEFAULT} personas. Para grupos más grandes, contacta directamente con el restaurante.`;
     case 'invalid_name': return 'Escribe tu nombre (mínimo 2 caracteres).';
     case 'invalid_phone': return 'Revisa el teléfono: debe tener al menos 9 cifras.';
     case 'invalid_email': return 'Revisa el email: no parece válido.';
@@ -21,16 +21,16 @@ export function bookingErrorMessage(code: string, extra: { max?: number; remaini
     case 'invalid_datetime': return 'Elige una fecha y una hora válidas.';
     case 'past': return 'La fecha y hora elegidas ya han pasado. Elige un momento futuro.';
     case 'closed_day': return 'Ese día el restaurante está cerrado. Elige otra fecha.';
-    case 'blocked': return 'Lo sentimos, ese servicio no admite reservas online (cerrado o completo por evento). Elige otra fecha o llámanos.';
+    case 'blocked': return 'Lo sentimos, ese servicio no admite reservas online (cerrado o completo por evento). Elige otra fecha.';
     case 'outside_hours': return 'Esa hora está fuera de nuestro horario de reservas. Elige una de las horas disponibles.';
     case 'invalid_slot': return 'Elige una de las horas disponibles de la lista.';
     case 'full':
       return extra.remaining && extra.remaining > 0
         ? `No quedan plazas suficientes en ese servicio (quedan ${extra.remaining}). Prueba con menos personas, otra hora u otro día.`
-        : 'Ese servicio está completo. Prueba otro horario u otro día, o llámanos.';
+        : 'Ese servicio está completo. Prueba otro horario u otro día.';
     case 'rate_limited': return 'Has hecho demasiados intentos seguidos. Espera unos minutos y vuelve a probarlo.';
     case 'not_configured': return 'Las reservas online no están disponibles ahora mismo. Llámanos, por favor.';
-    default: return 'No hemos podido registrar la reserva. Inténtalo de nuevo o llámanos.';
+    default: return 'No hemos podido registrar la reserva. Inténtalo de nuevo en unos minutos.';
   }
 }
 

@@ -57,7 +57,7 @@ const today = todayMadrid();
       </div>
       <p class="bk__error" role="alert" data-bk-error hidden></p>
       <button class="btn btn--gold bk__submit" type="submit" data-bk-submit>Reservar</button>
-      <noscript><p class="bk__hint">Para reservar online necesitas JavaScript. También puedes llamarnos.</p></noscript>
+      <noscript><p class="bk__hint">Para reservar online necesitas JavaScript.</p></noscript>
     </form>
 
     <div class="bk__ok" data-bk-ok hidden tabindex="-1">
@@ -66,8 +66,6 @@ const today = todayMadrid();
       <p class="bk__ref">Referencia: <strong data-bk-ref></strong></p>
       <p class="bk__hint">Te hemos enviado un email con los detalles y un enlace para cancelar si lo necesitas.</p>
     </div>
-
-    <p class="contact__extra bk__alt">¿Prefieres llamar? Reserva también por teléfono al <a class="contact__phone" href={`tel:${site.phoneE164}`}>{site.phoneDisplay}</a>. Grupos de más de {maxParty} personas, por teléfono.</p>
     <p class="contact__extra">Síguenos en <a href={site.instagram} target="_blank" rel="noopener">Instagram</a> · <a href={site.facebook} target="_blank" rel="noopener">Facebook</a></p>
   </div>
 </section>

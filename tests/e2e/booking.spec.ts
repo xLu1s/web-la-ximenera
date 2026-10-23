@@ -3,25 +3,31 @@ import { apiBook, emailsTo, fillBookingForm, futureDate, sql, TUE, SAT, MON, uni
 import { T } from '../helpers/env';
 
 test.describe('Formulario público de reservas', () => {
-  test('el CTA principal «Reservar» lleva al formulario y el teléfono sigue como alternativa', async ({ page }) => {
+  test('el CTA principal «Reservar» lleva al formulario (único CTA de reserva)', async ({ page }) => {
     await page.goto('/');
     await expect(page.locator('.nav .btn')).toHaveText('Reservar');
     await expect(page.locator('.nav .btn')).toHaveAttribute('href', '#reservar');
     await expect(page.locator('.hero__ctas .btn--gold')).toHaveAttribute('href', '#reservar');
-    await expect(page.locator('#reservar .bk__alt')).toContainText('681 14 37 95');
-    await expect(page.locator('#reservar a[href="tel:+34681143795"]')).toBeVisible();
+    await expect(page.locator('[data-booking-form]')).toBeVisible();
   });
 
-  test('sin WhatsApp: ningún enlace wa.me ni mención en la web pública; el teléfono sigue en tel:', async ({ page, request }) => {
+  test('sin WhatsApp ni teléfono visibles en la web pública; el teléfono sigue en el JSON-LD', async ({ page, request }) => {
+    const phone = /681\s?14\s?37\s?95|681143795/;
     for (const path of ['/', '/privacidad', '/aviso-legal', '/cookies', '/reserva/cancelar?t=abc.def']) {
       const html = await (await request.get(path)).text();
       expect(html, path).not.toMatch(/wa\.me|whatsapp/i);
+      expect(html, path).not.toMatch(/href="tel:/i);
+      // Fuera de los datos estructurados (invisibles) no debe aparecer el número.
+      const visible = html.replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/g, '');
+      expect(visible, path).not.toMatch(phone);
+      await page.goto(path);
+      await expect(page.locator('a[href^="tel:"]'), path).toHaveCount(0);
+      expect(await page.locator('body').innerText(), path).not.toMatch(phone);
     }
     await page.goto('/');
-    await expect(page.locator('a[href*="wa.me"], a[href*="whatsapp" i]')).toHaveCount(0);
-    await expect(page.locator('.fab__btn')).toHaveCount(1);
-    await expect(page.locator('.fab__btn--call')).toHaveAttribute('href', 'tel:+34681143795');
-    await expect(page.locator('footer a[href="tel:+34681143795"]')).toBeVisible();
+    await expect(page.locator('.fab, .fab__btn')).toHaveCount(0);
+    const ld = await page.locator('script[type="application/ld+json"]').allTextContents();
+    expect(ld.map((t) => JSON.parse(t)).some((d) => d.telephone === '+34681143795')).toBe(true);
   });
 
   test('reserva válida desde el formulario: confirmación, referencia y emails (cliente + propietario)', async ({ page, request }) => {

@@ -6,7 +6,6 @@ import { env } from '../../lib/env';
 import { verifyCancelToken } from '../../lib/token';
 import { formatDateEs } from '../../lib/time';
 import { customerCancellation, ownerCancellation, sendEmail } from '../../lib/email';
-import { site } from '../../data/site';
 
 Astro.response.headers.set('Cache-Control', 'no-store');
 const token = Astro.url.searchParams.get('t') ?? '';
@@ -38,7 +37,7 @@ if (state === 'invalid') Astro.response.status = 404;
   <main id="contenido" class="legal" data-cancel-state={state}>
     <div class="container">
       <h1>Cancelar reserva</h1>
-      {state === 'invalid' && <p class="bk__error" role="alert">El enlace de cancelación no es válido o ha caducado. Si necesitas ayuda, llámanos al <a href={`tel:${site.phoneE164}`}>{site.phoneDisplay}</a>.</p>}
+      {state === 'invalid' && <p class="bk__error" role="alert">El enlace de cancelación no es válido o ha caducado. Si necesitas ayuda, contacta con el restaurante.</p>}
       {booking && (
         <p>Reserva <strong>{booking.reference}</strong>: {formatDateEs(booking.day)} a las {booking.booking_time.slice(0, 5)}, {booking.party_size} {booking.party_size === 1 ? 'persona' : 'personas'}, a nombre de {booking.name}.</p>
       )}
@@ -52,7 +51,7 @@ if (state === 'invalid') Astro.response.status = 404;
       {state === 'done' && <p class="bk__ok" role="status">Tu reserva se ha cancelado. Te hemos enviado un email de confirmación. ¡Esperamos verte pronto!</p>}
       {state === 'already' && <p class="bk__ok" role="status">Esta reserva ya estaba cancelada.</p>}
       {state === 'past' && <p class="bk__error" role="alert">Esta reserva ya no se puede cancelar online porque la fecha ha pasado.</p>}
-      {state === 'error' && <p class="bk__error" role="alert">No hemos podido cancelar la reserva. Inténtalo de nuevo o llámanos al {site.phoneDisplay}.</p>}
+      {state === 'error' && <p class="bk__error" role="alert">No hemos podido cancelar la reserva. Inténtalo de nuevo en unos minutos.</p>}
     </div>
   </main>
 </Base>

@@ -198,7 +198,6 @@ address { font-style: normal; font-family: var(--font-display); font-size: 1.7re
 .contact h2 { color: var(--cream); font-size: clamp(2.6rem, 7vw, 4.6rem); }
 .contact__box { max-width: 760px; }
 .contact__actions { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; margin: 2rem 0 1.5rem; }
-.contact__phone { color: var(--gold); font-weight: 700; white-space: nowrap; }
 .contact__extra { font-size: .9rem; opacity: .8; }
 .contact__extra a { color: var(--gold); }
 
@@ -210,10 +209,6 @@ address { font-style: normal; font-family: var(--font-display); font-size: 1.7re
 .footer__small { font-size: .8rem; opacity: .7; margin: 0; }
 
 /* Botones flotantes */
-.fab { position: fixed; right: 1rem; bottom: 1rem; z-index: 60; display: grid; gap: .7rem; }
-.fab__btn { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; color: #fff; box-shadow: 0 10px 24px -8px rgb(0 0 0 / .5); transition: transform .3s var(--ease); }
-.fab__btn:hover { transform: scale(1.08); }
-.fab__btn--call { background: var(--walnut); border: 1px solid var(--gold); }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
@@ -455,7 +450,6 @@ address { font-style: normal; font-family: var(--font-display); font-size: 1.7re
 .bk__ok { margin: 2rem auto 1.5rem; background: var(--cream); color: var(--text); padding: 2rem; border-radius: var(--radius); border-left: 6px solid var(--gold); text-align: left; }
 .bk__ok h3 { font-size: 2rem; }
 .bk__ref strong { font-size: 1.3rem; letter-spacing: .08em; color: var(--walnut); }
-.bk__alt a { color: var(--gold); }
 
 /* Mapa con consentimiento */
 .map::before { content: none; }

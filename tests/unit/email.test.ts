@@ -52,4 +52,10 @@ describe('emails (Resend simulado)', () => {
     const all = [customerConfirmation(summary, 'https://x/c'), ownerNotification(summary, 'https://x/admin'), customerCancellation(summary), ownerCancellation(summary, 'cliente')];
     for (const m of all) expect(JSON.stringify(m)).not.toMatch(/wa\.me|whatsapp/i);
   });
+
+  it('los emails al cliente mantienen el teléfono del restaurante para cambios', () => {
+    expect(customerConfirmation(summary, 'https://x/c').html).toContain('681 14 37 95');
+    expect(customerConfirmation(summary, 'https://x/c').text).toContain('681 14 37 95');
+    expect(customerCancellation(summary).html).toContain('681 14 37 95');
+  });
 });
