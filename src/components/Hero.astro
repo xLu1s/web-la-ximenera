@@ -5,6 +5,8 @@ import { instagramCredit } from '../data/gallery';
 // Foto oficial del Instagram @laximenera_restaurante, post https://www.instagram.com/p/Da-16HSCJVO/ (19/07/2026):
 // comedor del nuevo local (vigas de madera, pared de piedra, bodega acristalada). Versión retocada sin la camarera, 1440×1440.
 import heroImg from '../assets/hero/comedor-rooftop.jpg';
+interface Props { closedNote?: string }
+const { closedNote = 'Cerrado los lunes' } = Astro.props;
 ---
 <section id="inicio" class="hero" aria-labelledby="hero-title">
   <div class="hero__media" data-parallax>
@@ -25,13 +27,13 @@ import heroImg from '../assets/hero/comedor-rooftop.jpg';
     <h1 id="hero-title" class="hero__anim" style="--d:.25s">La <em>Ximenera</em></h1>
     <p class="hero__lead hero__anim" style="--d:.45s">Un nuevo espacio singular con encanto. {site.cuisine}, en un rooftop en Alcoi.</p>
     <div class="hero__ctas hero__anim" style="--d:.65s">
-      <a class="btn btn--gold" href={`tel:${site.phoneE164}`}>
-        <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z"/></svg>
+      <a class="btn btn--gold" href="#reservar">
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V9h14v11z"/></svg>
         Reservar mesa
       </a>
       <a class="btn btn--ghost" href={site.mapsLink} target="_blank" rel="noopener">Cómo llegar</a>
     </div>
-    <p class="hero__note hero__anim" style="--d:.85s">Reservas al <a href={`tel:${site.phoneE164}`}>{site.phoneDisplay}</a> · Cerrado los lunes</p>
+    <p class="hero__note hero__anim" style="--d:.85s">Reserva online o al <a href={`tel:${site.phoneE164}`}>{site.phoneDisplay}</a>{closedNote && ` · ${closedNote}`}</p>
   </div>
   <a href="#nosotros" class="hero__scroll" aria-label="Bajar a la siguiente sección"><span></span></a>
   <p class="hero__credit"><a href="https://www.instagram.com/p/Da-16HSCJVO/" target="_blank" rel="noopener">{instagramCredit}</a></p>

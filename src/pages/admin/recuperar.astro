@@ -1,0 +1,28 @@
+---
+export const prerender = false;
+import Admin from '../../layouts/Admin.astro';
+import { env } from '../../lib/env';
+let sent = false;
+if (Astro.request.method === 'POST') {
+  const fd = await Astro.request.formData();
+  const email = String(fd.get('email') ?? '').trim();
+  const origin = env.siteUrl || Astro.url.origin;
+  if (email) {
+    const { error } = await Astro.locals.supabase.auth.resetPasswordForEmail(email, { redirectTo: `${origin}/admin/nueva-clave` });
+    if (error) console.error('[recuperar]', error.message);
+  }
+  sent = true; // Mismo mensaje exista o no la cuenta.
+}
+---
+<Admin title="Recuperar contraseña" bare>
+  {sent ? (
+    <p class="adm__flash adm__flash--ok" role="status">Si el email corresponde a una cuenta del panel, recibirás un enlace para crear una contraseña nueva.</p>
+  ) : (
+    <form method="post" class="card">
+      <p class="help">Escribe tu email y te enviaremos un enlace para crear una contraseña nueva.</p>
+      <label class="f">Email <input type="email" name="email" required autocomplete="username" /></label>
+      <button class="btn" type="submit" style="width:100%;margin-top:1rem">Enviar enlace</button>
+    </form>
+  )}
+  <p class="help"><a href="/admin/login">Volver a entrar</a></p>
+</Admin>

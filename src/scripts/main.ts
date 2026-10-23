@@ -134,3 +134,22 @@ if (rv) {
   go(0);
   start();
 }
+
+// Mapa de Google: solo se carga si el visitante lo pide (Google puede instalar cookies).
+const map = document.querySelector<HTMLElement>('[data-map]');
+const loadMap = () => {
+  if (!map || map.querySelector('iframe')) return;
+  const f = document.createElement('iframe');
+  f.title = 'Mapa: La Ximenera - Rooftop, C/ Regiment Biscaia 2, Ático, Alcoy';
+  f.src = map.dataset.src!;
+  f.loading = 'lazy';
+  f.referrerPolicy = 'no-referrer-when-downgrade';
+  f.allowFullscreen = true;
+  map.querySelector('[data-map-consent]')?.remove();
+  map.append(f);
+};
+map?.querySelector('[data-map-load]')?.addEventListener('click', () => {
+  try { localStorage.setItem('lx-maps-ok', '1'); } catch { /* sin almacenamiento */ }
+  loadMap();
+});
+try { if (localStorage.getItem('lx-maps-ok') === '1') loadMap(); } catch { /* sin almacenamiento */ }

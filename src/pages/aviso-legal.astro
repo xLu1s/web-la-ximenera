@@ -1,0 +1,21 @@
+---
+import Legal from '../layouts/Legal.astro';
+import Tbc from '../components/Tbc.astro';
+import { legal } from '../data/legal';
+import { site } from '../data/site';
+---
+<Legal title="Aviso legal" description="Aviso legal de la web de La Ximenera (Alcoi).">
+  <p>En cumplimiento de la Ley 34/2002, de servicios de la sociedad de la información y de comercio electrónico (LSSI-CE):</p>
+  <ul>
+    <li>Titular: <Tbc label={legal.holder} /></li>
+    <li>NIF: <Tbc label={legal.taxId} /></li>
+    <li>Domicilio: <Tbc label={legal.fiscalAddress} /></li>
+    <li>Datos registrales: <Tbc label={legal.registry} /></li>
+    <li>Establecimiento: La Ximenera, {site.address.street}, {site.address.postalCode} {site.address.city} ({site.address.region})</li>
+    <li>Teléfono: {site.phoneDisplay} · Email: <Tbc label={legal.contactEmail} /></li>
+  </ul>
+  <h2>Uso de la web</h2>
+  <p>Esta web informa sobre el restaurante y permite reservar mesa. Los precios y platos pueden variar según mercado y temporada; ante cualquier duda, pregunta a nuestro equipo.</p>
+  <h2>Propiedad intelectual</h2>
+  <p>Los textos, logotipos y fotografías propias pertenecen a su titular. Las fotos marcadas como «foto de cliente» son de sus autores.</p>
+</Legal>

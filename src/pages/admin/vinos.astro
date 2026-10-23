@@ -1,0 +1,71 @@
+---
+export const prerender = false;
+import Admin from '../../layouts/Admin.astro';
+import { WINE_TYPES, WINES_PROVISIONAL_MESSAGE, type WineRow } from '../../lib/content';
+import { dbErrorMessage, faction, fbool, fid, fint, fnull, fstr, redirectWith } from '../../lib/admin';
+import { validateWine } from '../../lib/validate';
+
+const sb = Astro.locals.supabase;
+if (Astro.request.method === 'POST') {
+  const fd = await Astro.request.formData();
+  const action = faction(fd);
+  if (action === 'delete') {
+    const { error, count } = await sb.from('wines').delete({ count: 'exact' }).eq('id', fid(fd)!);
+    if (error || !count) return redirectWith('/admin/vinos', dbErrorMessage(error), 'err');
+    return redirectWith('/admin/vinos', 'Vino eliminado.');
+  }
+  const v = validateWine({
+    name: fstr(fd, 'name'), wine_type: fstr(fd, 'wine_type'), origin: fnull(fd, 'origin'), description: fnull(fd, 'description'),
+    price_bottle: fstr(fd, 'price_bottle'), price_glass: fstr(fd, 'price_glass'), sort_order: fint(fd, 'sort_order'), visible: fbool(fd, 'visible'),
+  });
+  if (!v.ok) return redirectWith('/admin/vinos', v.error, 'err');
+  const { error } = action === 'create'
+    ? await sb.from('wines').insert(v.value)
+    : await sb.from('wines').update(v.value).eq('id', fid(fd)!);
+  if (error) return redirectWith('/admin/vinos', dbErrorMessage(error), 'err');
+  return redirectWith('/admin/vinos', `Vino «${v.value.name}» guardado.`);
+}
+const { data } = await sb.from('wines').select('*').order('wine_type').order('sort_order').order('name');
+const wines = (data ?? []) as WineRow[];
+const visibleCount = wines.filter((w) => w.visible).length;
+const euro = (n: number | null) => (n == null ? '' : String(n).replace('.', ','));
+---
+<Admin title="Carta de vinos" section="vinos">
+  {visibleCount === 0
+    ? <p class="adm__flash adm__flash--ok" data-wines-status="provisional">Ahora mismo no hay vinos visibles: la web muestra «{WINES_PROVISIONAL_MESSAGE}». En cuanto añadas un vino visible, aparecerá la carta.</p>
+    : <p class="help" data-wines-status="list">{visibleCount} vinos visibles en la web.</p>}
+  {wines.map((w) => (
+    <form method="post" class:list={['item card', { 'item--hidden': !w.visible }]} data-wine={w.name}>
+      <input type="hidden" name="action" value="save" /><input type="hidden" name="id" value={w.id} />
+      <div class="grid">
+        <label class="f">Nombre <input name="name" value={w.name} required maxlength="160" /></label>
+        <label class="f">Tipo <select name="wine_type">{Object.entries(WINE_TYPES).map(([k, l]) => <option value={k} selected={w.wine_type === k}>{l}</option>)}</select></label>
+        <label class="f">D.O. / origen <input name="origin" value={w.origin ?? ''} maxlength="160" /></label>
+        <label class="f">Precio botella (€) <input name="price_bottle" value={euro(w.price_bottle)} inputmode="decimal" /></label>
+        <label class="f">Precio copa (€) <input name="price_glass" value={euro(w.price_glass)} inputmode="decimal" /></label>
+        <label class="f">Orden <input type="number" name="sort_order" value={w.sort_order} /></label>
+        <label class="f f--wide">Nota (opcional) <input name="description" value={w.description ?? ''} maxlength="400" /></label>
+        <label class="f--check"><input type="checkbox" name="visible" checked={w.visible} /> Visible</label>
+      </div>
+      <div class="actions">
+        <button class="btn btn--small" type="submit">Guardar</button>
+        <button class="btn btn--danger btn--small" type="submit" name="action" value="delete" data-confirm={`¿Borrar «${w.name}»?`}>Borrar</button>
+      </div>
+    </form>
+  ))}
+  <form method="post" class="card card--muted" data-new-wine>
+    <h2 style="margin-top:0">Añadir vino</h2>
+    <input type="hidden" name="action" value="create" />
+    <div class="grid">
+      <label class="f">Nombre <input name="name" required maxlength="160" /></label>
+      <label class="f">Tipo <select name="wine_type" required><option value="">Elige…</option>{Object.entries(WINE_TYPES).map(([k, l]) => <option value={k}>{l}</option>)}</select></label>
+      <label class="f">D.O. / origen <input name="origin" maxlength="160" placeholder="D.O. Alicante" /></label>
+      <label class="f">Precio botella (€) <input name="price_bottle" inputmode="decimal" placeholder="18,50" /></label>
+      <label class="f">Precio copa (€) <input name="price_glass" inputmode="decimal" placeholder="3,50" /></label>
+      <label class="f">Orden <input type="number" name="sort_order" value="0" /></label>
+      <label class="f f--wide">Nota (opcional) <input name="description" maxlength="400" /></label>
+      <label class="f--check"><input type="checkbox" name="visible" checked /> Visible</label>
+    </div>
+    <div class="actions"><button class="btn" type="submit">Añadir vino</button></div>
+  </form>
+</Admin>

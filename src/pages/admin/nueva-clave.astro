@@ -1,0 +1,43 @@
+---
+export const prerender = false;
+import Admin from '../../layouts/Admin.astro';
+const sb = Astro.locals.supabase;
+let error = '';
+const code = Astro.url.searchParams.get('code');
+const tokenHash = Astro.url.searchParams.get('token_hash');
+if (Astro.request.method === 'GET' && code) {
+  const { error: e } = await sb.auth.exchangeCodeForSession(code);
+  if (e) error = 'El enlace no es válido o ha caducado. Pide uno nuevo.';
+  else return Astro.redirect('/admin/nueva-clave', 303);
+} else if (Astro.request.method === 'GET' && tokenHash) {
+  const { error: e } = await sb.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' });
+  if (e) error = 'El enlace no es válido o ha caducado. Pide uno nuevo.';
+  else return Astro.redirect('/admin/nueva-clave', 303);
+}
+const { data: { user } } = await sb.auth.getUser();
+if (Astro.request.method === 'POST') {
+  const fd = await Astro.request.formData();
+  const p1 = String(fd.get('password') ?? ''), p2 = String(fd.get('password2') ?? '');
+  if (!user) error = 'La sesión de recuperación ha caducado. Pide un enlace nuevo.';
+  else if (p1.length < 8) error = 'La contraseña debe tener al menos 8 caracteres.';
+  else if (p1 !== p2) error = 'Las contraseñas no coinciden.';
+  else {
+    const { error: e } = await sb.auth.updateUser({ password: p1 });
+    if (e) error = 'No se pudo cambiar la contraseña: ' + (/same|different/i.test(e.message) ? 'debe ser distinta de la anterior.' : 'inténtalo de nuevo.');
+    else return Astro.redirect('/admin/reservas?ok=' + encodeURIComponent('Contraseña actualizada.'), 303);
+  }
+}
+---
+<Admin title="Nueva contraseña" bare>
+  {error && <p class="adm__flash adm__flash--err" role="alert">{error}</p>}
+  {user ? (
+    <form method="post" class="card">
+      <p class="help">Cuenta: {user.email}</p>
+      <label class="f">Contraseña nueva (mín. 8 caracteres) <input type="password" name="password" required minlength="8" autocomplete="new-password" /></label>
+      <label class="f" style="margin-top:.75rem">Repite la contraseña <input type="password" name="password2" required minlength="8" autocomplete="new-password" /></label>
+      <button class="btn" type="submit" style="width:100%;margin-top:1rem">Guardar contraseña</button>
+    </form>
+  ) : (
+    <p class="help"><a href="/admin/recuperar">Pedir un enlace nuevo</a></p>
+  )}
+</Admin>
