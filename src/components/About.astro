@@ -1,6 +1,5 @@
 ---
 import { Image } from 'astro:assets';
-import { instagram, instagramCredit } from '../data/gallery';
 // Foto oficial del Instagram @laximenera_restaurante: https://www.instagram.com/p/DcqG3KRI_a1/
 import foto from '../assets/instagram/ig-05.jpg';
 ---
@@ -23,7 +22,6 @@ import foto from '../assets/instagram/ig-05.jpg';
       <div class="about__frame">
         <Image src={foto} widths={[400, 640]} sizes="(min-width: 860px) 40vw, 90vw" alt="Carne de vaca a la brasa trinchada sobre tabla con verduras" />
       </div>
-      <figcaption><a href={instagram.url} target="_blank" rel="noopener">{instagramCredit}</a></figcaption>
     </figure>
   </div>
 </section>

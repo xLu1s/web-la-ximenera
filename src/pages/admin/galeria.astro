@@ -1,0 +1,64 @@
+---
+export const prerender = false;
+import Admin from '../../layouts/Admin.astro';
+import { galleryUrl, type GalleryRow } from '../../lib/content';
+import { dbErrorMessage, faction, fbool, fid, fint, fstr, redirectWith } from '../../lib/admin';
+
+const sb = Astro.locals.supabase;
+if (Astro.request.method === 'POST') {
+  const fd = await Astro.request.formData();
+  const action = faction(fd);
+  const id = fid(fd);
+  if (action === 'delete' && id) {
+    const { data: row } = await sb.from('gallery_items').select('storage_path').eq('id', id).single();
+    const { error, count } = await sb.from('gallery_items').delete({ count: 'exact' }).eq('id', id);
+    if (error || !count) return redirectWith('/admin/galeria', dbErrorMessage(error), 'err');
+    if (row?.storage_path) await sb.storage.from('media').remove([row.storage_path]);
+    return redirectWith('/admin/galeria', 'Elemento eliminado de la galería.');
+  }
+  if (action === 'save' && id) {
+    const caption = fstr(fd, 'caption').slice(0, 300);
+    const { error } = await sb.from('gallery_items').update({
+      caption, sort_order: fint(fd, 'sort_order'), visible: fbool(fd, 'visible'),
+    }).eq('id', id);
+    if (error) return redirectWith('/admin/galeria', dbErrorMessage(error), 'err');
+    return redirectWith('/admin/galeria', 'Cambios guardados.');
+  }
+  return redirectWith('/admin/galeria', 'Acción desconocida.', 'err');
+}
+const { data } = await sb.from('gallery_items').select('*').order('sort_order').order('id');
+const items = (data ?? []) as GalleryRow[];
+---
+<Admin title="Galería" section="galeria">
+  <section class="card card--muted">
+    <h2 style="margin-top:0">Subir foto o vídeo</h2>
+    <div data-uploader data-purpose="gallery">
+      <div class="grid">
+        <label class="f f--wide">Archivo (fotos JPG/PNG/WebP/AVIF hasta 10 MB · vídeos MP4/WebM hasta 50 MB)
+          <input type="file" accept="image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm" data-file /></label>
+        <label class="f">Descripción (para personas con discapacidad visual y buscadores) <input name="caption" maxlength="300" data-extra placeholder="Pulpo a la brasa" /></label>
+      </div>
+      <div class="actions"><button type="button" class="btn" data-upload>Subir</button></div>
+      <p class="upload-status" data-status aria-live="polite"></p>
+    </div>
+  </section>
+  <p class="help">{items.filter((i) => i.visible).length} de {items.length} elementos visibles. El «orden» decide la posición en el carrusel (menor = antes).</p>
+  <div class="media-grid">
+    {items.map((it) => (
+      <form method="post" class:list={['item', { 'item--hidden': !it.visible }]} data-gallery-admin={it.caption}>
+        <input type="hidden" name="action" value="save" /><input type="hidden" name="id" value={it.id} />
+        {it.media_type === 'video' ? <video src={galleryUrl(it)} controls muted preload="metadata"></video> : <img src={galleryUrl(it)} alt={it.caption} loading="lazy" />}
+        <label class="f">Descripción <input name="caption" value={it.caption} maxlength="300" /></label>
+        <div class="row">
+          <label class="f" style="width:150px">Orden (1 = sale primero) <input type="number" name="sort_order" min="1" value={it.sort_order} /></label>
+          <label class="f--check"><input type="checkbox" name="visible" checked={it.visible} /> Visible</label>
+        </div>
+        <div class="actions">
+          <button class="btn btn--small" type="submit">Guardar</button>
+          <button class="btn btn--danger btn--small" type="submit" name="action" value="delete" data-confirm="¿Borrar este elemento de la galería?">Borrar</button>
+        </div>
+      </form>
+    ))}
+  </div>
+  <script>import '../../scripts/admin-upload';</script>
+</Admin>

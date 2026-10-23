@@ -1,5 +1,8 @@
 ---
-import { hours } from '../data/site';
+import { hoursTable, hoursSummary, type OpeningHour } from '../lib/hours';
+interface Props { hours: OpeningHour[] }
+const rows = hoursTable(Astro.props.hours);
+const summary = hoursSummary(Astro.props.hours);
 ---
 <section id="horario" class="section hours" aria-labelledby="hours-title">
   <div class="container hours__grid reveal">
@@ -7,12 +10,12 @@ import { hours } from '../data/site';
       <p class="eyebrow">Horario</p>
       <h2 id="hours-title">Cuándo encendemos <em>la brasa</em></h2>
       <p>Para grupos, recomendamos reservar con antelación, sobre todo los fines de semana.</p>
-      <p>Cerramos los lunes. Domingos, solo mediodía.</p>
+      {summary.length > 0 && <p>{summary.join(' ')}</p>}
     </div>
     <table class="hours__table" data-hours>
       <caption class="sr-only">Horario semanal</caption>
       <tbody>
-        {hours.map((h, i) => (
+        {rows.map((h, i) => (
           <tr data-day={(i + 1) % 7}>
             <th scope="row">{h.day}</th>
             <td class:list={{ closed: h.value === 'Cerrado' }}>{h.value}</td>

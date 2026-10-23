@@ -1,32 +1,47 @@
 ---
+// Página principal renderizada en el servidor: el contenido (carta, vinos, menús especiales,
+// galería, horario) se lee de Supabase y lo edita el restaurante desde /admin.
+// Sin caché en la CDN: los cambios del panel se ven en la siguiente carga. Los recursos estáticos
+// (/_astro/*, imágenes) sí se cachean mucho tiempo.
+export const prerender = false;
 import Base from '../layouts/Base.astro';
 import Header from '../components/Header.astro';
 import Hero from '../components/Hero.astro';
 import About from '../components/About.astro';
+import SpecialMenus from '../components/SpecialMenus.astro';
 import Menu from '../components/Menu.astro';
+import Wines from '../components/Wines.astro';
 import Gallery from '../components/Gallery.astro';
 import Hours from '../components/Hours.astro';
 import Reviews from '../components/Reviews.astro';
 import Location from '../components/Location.astro';
-import Contact from '../components/Contact.astro';
+import Booking from '../components/Booking.astro';
 import Footer from '../components/Footer.astro';
-import FloatingCall from '../components/FloatingCall.astro';
+import { getPublicContent } from '../lib/content';
+import { closedNote } from '../lib/hours';
+
+const content = await getPublicContent();
+Astro.response.headers.set('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+Astro.response.headers.set('CDN-Cache-Control', 'no-store');
+Astro.response.headers.set('Vercel-CDN-Cache-Control', 'no-store');
 ---
 <Base
   title="La Ximenera Rooftop · Restaurante en Alcoi (Alcoy) · Brasería mediterránea"
-  description="La Ximenera Rooftop, restaurante en Alcoi (Alcoy, Alicante): brasería mediterránea y cocina de producto en un ático con terraza. Carta, menú del día y reservas en el 681 14 37 95."
+  description="La Ximenera Rooftop, restaurante en Alcoi (Alcoy, Alicante): brasería mediterránea y cocina de producto en un ático con terraza. Carta, menú del día y reservas online."
+  hours={content.hours}
 >
-  <Header />
+  <Header hasSpecials={content.specials.length > 0} />
   <main id="contenido">
-    <Hero />
+    <Hero closedNote={closedNote(content.hours)} />
+    <SpecialMenus specials={content.specials} />
     <About />
-    <Menu />
-    <Gallery />
-    <Hours />
+    <Menu menu={content.menu} menuDelDia={content.menuDelDia} />
+    <Wines wines={content.wines} />
+    <Gallery items={content.gallery} />
+    <Hours hours={content.hours} />
     <Reviews />
     <Location />
-    <Contact />
+    <Booking maxParty={content.maxParty} />
   </main>
   <Footer />
-  <FloatingCall />
 </Base>

@@ -1,0 +1,31 @@
+---
+export const prerender = false;
+import Admin from '../../../layouts/Admin.astro';
+import { specialStatus, type SpecialMenuRow } from '../../../lib/content';
+import { formatDateEs, todayMadrid } from '../../../lib/time';
+const { data } = await Astro.locals.supabase.from('special_menus').select('*').order('kind').order('sort_order').order('starts_on', { nullsFirst: true }).order('id');
+const menus = (data ?? []) as SpecialMenuRow[];
+const today = todayMadrid();
+const badge = { activo: 'badge--ok', programado: 'badge--warn', caducado: 'badge', oculto: 'badge' } as const;
+const label = { activo: 'Visible ahora', programado: 'Programado', caducado: 'Caducado', oculto: 'Oculto' } as const;
+---
+<Admin title="Menús especiales" section="menus">
+  <p class="help">Los menús especiales (Navidad, fiestas de Moros i Cristians…) aparecen destacados en la web solo entre sus fechas de inicio y fin, y se ocultan solos al caducar. El «Menú del día» se muestra dentro de la carta.</p>
+  <p><a class="btn" href="/admin/menus/nuevo">+ Nuevo menú especial</a></p>
+  {menus.map((m) => {
+    const st = specialStatus(m, today);
+    return (
+      <a class="card" href={`/admin/menus/${m.id}`} style="display:block;text-decoration:none;color:inherit" data-menu={m.title}>
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <strong>{m.title}</strong>
+          <span class={`badge ${badge[st]}`} data-status={st}>{label[st]}</span>
+        </div>
+        <p class="help" style="margin:.3rem 0 0">
+          {m.kind === 'del_dia' ? 'Menú del día (en la carta)' : 'Menú especial (sección destacada)'}
+          {m.starts_on || m.ends_on ? ` · ${m.starts_on ? formatDateEs(m.starts_on) : 'sin inicio'} → ${m.ends_on ? formatDateEs(m.ends_on) : 'sin fin'}` : ' · sin fechas (siempre)'}
+          {m.price ? ` · ${m.price}` : ''}
+        </p>
+      </a>
+    );
+  })}
+</Admin>

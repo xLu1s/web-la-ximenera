@@ -1,0 +1,11 @@
+---
+import Base from './Base.astro';
+import Footer from '../components/Footer.astro';
+interface Props { title: string; description: string }
+const { title, description } = Astro.props;
+---
+<Base title={`${title} · La Ximenera`} description={description} structuredData={false}>
+  <header class="header is-scrolled legal-header"><div class="container header__inner"><a href="/" class="brand"><span>La Ximenera</span></a><nav class="nav" aria-label="Principal"><a href="/">Volver a la web</a></nav></div></header>
+  <main id="contenido" class="legal"><div class="container"><h1>{title}</h1><slot /></div></main>
+  <Footer />
+</Base>

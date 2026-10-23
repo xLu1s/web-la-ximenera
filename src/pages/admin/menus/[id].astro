@@ -1,0 +1,127 @@
+---
+export const prerender = false;
+import Admin from '../../../layouts/Admin.astro';
+import { menuImageUrl, specialStatus, type Course, type SpecialMenuRow } from '../../../lib/content';
+import { dbErrorMessage, faction, fbool, fint, fnull, fstr, redirectWith } from '../../../lib/admin';
+import { validateSpecialMenu } from '../../../lib/validate';
+import { todayMadrid } from '../../../lib/time';
+
+const sb = Astro.locals.supabase;
+const isNew = Astro.params.id === 'nuevo';
+const id = isNew ? null : Number(Astro.params.id);
+if (!isNew && !Number.isInteger(id)) return Astro.redirect('/admin/menus', 303);
+
+if (Astro.request.method === 'POST') {
+  const fd = await Astro.request.formData();
+  const action = faction(fd);
+  const self = isNew ? '/admin/menus/nuevo' : `/admin/menus/${id}`;
+  if (action === 'delete' && id) {
+    const { data: old } = await sb.from('special_menus').select('image_path').eq('id', id).single();
+    const { error, count } = await sb.from('special_menus').delete({ count: 'exact' }).eq('id', id);
+    if (error || !count) return redirectWith(self, dbErrorMessage(error), 'err');
+    if (old?.image_path) await sb.storage.from('media').remove([old.image_path]);
+    return redirectWith('/admin/menus', 'Menú eliminado.');
+  }
+  if (action === 'remove_image' && id) {
+    const { data: old } = await sb.from('special_menus').select('image_path').eq('id', id).single();
+    const { error } = await sb.from('special_menus').update({ image_path: null }).eq('id', id);
+    if (error) return redirectWith(self, dbErrorMessage(error), 'err');
+    if (old?.image_path) await sb.storage.from('media').remove([old.image_path]);
+    return redirectWith(self, 'Imagen quitada.');
+  }
+  const titles = fd.getAll('course_title').map(String);
+  const itemsArr = fd.getAll('course_items').map(String);
+  const courses: Course[] = titles.map((t, i) => ({ title: t, items: (itemsArr[i] ?? '').split('\n') }));
+  const v = validateSpecialMenu({
+    kind: fstr(fd, 'kind') || 'especial', title: fstr(fd, 'title'), subtitle: fnull(fd, 'subtitle'), description: fnull(fd, 'description'),
+    price: fnull(fd, 'price'), price_note: fnull(fd, 'price_note'), starts_on: fnull(fd, 'starts_on'), ends_on: fnull(fd, 'ends_on'),
+    courses, visible: fbool(fd, 'visible'), sort_order: fint(fd, 'sort_order'),
+  });
+  if (!v.ok) return redirectWith(self, v.error, 'err');
+  const imagePath = fstr(fd, 'image_path');
+  const row = { ...v.value, ...(imagePath && imagePath.startsWith('menus/') ? { image_path: imagePath } : {}) };
+  const { data, error } = isNew
+    ? await sb.from('special_menus').insert(row).select('id').single()
+    : await sb.from('special_menus').update(row).eq('id', id!).select('id').single();
+  if (error || !data) return redirectWith(self, dbErrorMessage(error), 'err');
+  return redirectWith(`/admin/menus/${data.id}`, `Menú «${v.value.title}» guardado.`);
+}
+
+let menu: SpecialMenuRow | null = null;
+if (!isNew) {
+  const { data } = await sb.from('special_menus').select('*').eq('id', id!).maybeSingle();
+  if (!data) return Astro.redirect('/admin/menus?err=' + encodeURIComponent('Ese menú no existe.'), 303);
+  menu = data as SpecialMenuRow;
+}
+let nextOrder = 1;
+if (isNew) {
+  const { data: last } = await sb.from('special_menus').select('sort_order').eq('kind', 'especial').order('sort_order', { ascending: false }).limit(1).maybeSingle();
+  nextOrder = (last?.sort_order ?? 0) + 1;
+}
+const m = menu ?? { kind: 'especial', title: '', subtitle: '', description: '', courses: [], price: '', price_note: '', starts_on: null, ends_on: null, visible: true, sort_order: nextOrder, image_path: null } as unknown as SpecialMenuRow;
+const courses: Course[] = m.courses.length ? m.courses : [{ title: 'Entrantes', items: [] }, { title: 'Principal', items: [] }, { title: 'Postre', items: [] }];
+const st = menu ? specialStatus(menu, todayMadrid()) : null;
+---
+<Admin title={isNew ? 'Nuevo menú especial' : `Editar: ${m.title}`} section="menus">
+  <p><a href="/admin/menus">← Todos los menús</a> {st && <span class="badge" data-status={st}>Estado: {st}</span>}</p>
+  <form method="post" class="card" data-menu-form>
+    <input type="hidden" name="action" value="save" />
+    <input type="hidden" name="image_path" value="" data-image-path />
+    <div class="grid">
+      <label class="f">Tipo <select name="kind"><option value="especial" selected={m.kind === 'especial'}>Menú especial (sección destacada)</option><option value="del_dia" selected={m.kind === 'del_dia'}>Menú del día (en la carta)</option></select></label>
+      <label class="f">Título <input name="title" value={m.title} required maxlength="160" placeholder="Menú de Navidad" /></label>
+      <label class="f">Subtítulo <input name="subtitle" value={m.subtitle ?? ''} maxlength="160" placeholder="Moros i Cristians" /></label>
+      <label class="f">Precio <input name="price" value={m.price ?? ''} maxlength="60" placeholder="45 € por persona" /></label>
+      <label class="f">Nota del precio <input name="price_note" value={m.price_note ?? ''} maxlength="160" placeholder="Bebidas no incluidas" /></label>
+      <label class="f">Orden (1 = sale primero) <input type="number" name="sort_order" min="1" value={m.sort_order || ''} placeholder="Al final" /></label>
+      <label class="f">Visible desde <input type="date" name="starts_on" value={m.starts_on ?? ''} /></label>
+      <label class="f">Visible hasta (incluido) <input type="date" name="ends_on" value={m.ends_on ?? ''} /></label>
+      <label class="f--check"><input type="checkbox" name="visible" checked={m.visible} /> Visible</label>
+      <label class="f f--wide">Descripción <textarea name="description" maxlength="1500">{m.description ?? ''}</textarea></label>
+    </div>
+    <p class="help">Fechas en blanco = sin límite. La web lo muestra desde el día de inicio y lo oculta automáticamente al día siguiente del fin (hora de España).</p>
+    <h2>Platos</h2>
+    <div class="grid" data-courses>
+      {courses.map((c) => (
+        <div class="item" data-course>
+          <label class="f">Bloque <input name="course_title" value={c.title} maxlength="80" /></label>
+          <label class="f">Platos (uno por línea) <textarea name="course_items" rows="5">{c.items.join('\n')}</textarea></label>
+        </div>
+      ))}
+    </div>
+    <div class="actions"><button type="button" class="btn btn--light btn--small" data-add-course>+ Añadir bloque</button></div>
+    <div class="actions" style="margin-top:1.2rem">
+      <button class="btn" type="submit">Guardar menú</button>
+      {!isNew && <button class="btn btn--danger" type="submit" name="action" value="delete" data-confirm="¿Borrar este menú?">Borrar menú</button>}
+    </div>
+  </form>
+
+  {!isNew && (
+    <section class="card">
+      <h2 style="margin-top:0">Imagen (opcional)</h2>
+      {m.image_path && (
+        <form method="post">
+          <img src={menuImageUrl(m.image_path)} alt="" style="max-width:320px;border-radius:6px" />
+          <input type="hidden" name="action" value="remove_image" />
+          <div class="actions"><button class="btn btn--light btn--small" type="submit">Quitar imagen</button></div>
+        </form>
+      )}
+      <div data-uploader data-purpose="menu" data-menu-id={id} data-accept="image/jpeg,image/png,image/webp,image/avif">
+        <label class="f">Elegir foto (JPG, PNG, WebP o AVIF, máx. 10 MB) <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" data-file /></label>
+        <div class="actions"><button type="button" class="btn btn--small" data-upload>Subir imagen</button></div>
+        <p class="upload-status" data-status aria-live="polite"></p>
+      </div>
+    </section>
+  )}
+  <script>
+    import '../../../scripts/admin-upload';
+    const wrap = document.querySelector('[data-courses]');
+    document.querySelector('[data-add-course]')?.addEventListener('click', () => {
+      const first = wrap?.querySelector('[data-course]');
+      if (!first || !wrap) return;
+      const c = first.cloneNode(true) as HTMLElement;
+      c.querySelectorAll('input, textarea').forEach((el) => ((el as HTMLInputElement).value = ''));
+      wrap.append(c);
+    });
+  </script>
+</Admin>

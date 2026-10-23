@@ -1,0 +1,54 @@
+---
+import '../styles/admin.css';
+interface Props { title: string; section?: string; bare?: boolean }
+const { title, section = '', bare = false } = Astro.props;
+const ok = Astro.url.searchParams.get('ok');
+const err = Astro.url.searchParams.get('err');
+const nav = [
+  ['reservas', 'Reservas'], ['carta', 'Carta'], ['vinos', 'Vinos'], ['menus', 'Menús especiales'], ['galeria', 'Galería'], ['ajustes', 'Horarios y ajustes'],
+];
+const user = Astro.locals.user;
+---
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title} · Panel La Ximenera</title>
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+  </head>
+  <body class="adm">
+    {!bare && (
+      <header class="adm__top">
+        <a class="adm__brand" href="/admin/reservas"><img src="/logo.svg" alt="" width="28" height="28" /> Panel La Ximenera</a>
+        <button type="button" class="adm__toggle" aria-expanded="false" aria-controls="adm-nav" data-adm-toggle>Menú</button>
+        <nav id="adm-nav" class="adm__nav" aria-label="Secciones del panel" data-adm-nav>
+            {nav.map(([k, label]) => <a href={`/admin/${k}`} aria-current={section === k ? 'page' : undefined}>{label}</a>)}
+            <a href="/" target="_blank">Ver la web ↗</a>
+            <form method="post" action="/admin/salir"><button type="submit" class="adm__logout">Cerrar sesión{user?.email ? ` (${user.email})` : ''}</button></form>
+        </nav>
+      </header>
+    )}
+    <main class:list={['adm__main', { 'adm__main--bare': bare }]}>
+      <h1>{title}</h1>
+      {ok && <p class="adm__flash adm__flash--ok" role="status">{ok}</p>}
+      {err && <p class="adm__flash adm__flash--err" role="alert">{err}</p>}
+      <slot />
+    </main>
+    <script>
+      const t = document.querySelector('[data-adm-toggle]');
+      t?.addEventListener('click', () => {
+        const open = t.getAttribute('aria-expanded') !== 'true';
+        t.setAttribute('aria-expanded', String(open));
+        document.querySelector('[data-adm-nav]')?.classList.toggle('is-open', open);
+      });
+      // Confirmación antes de acciones destructivas.
+      document.addEventListener('submit', (e) => {
+        const f = e.target as HTMLFormElement;
+        const msg = (e.submitter as HTMLElement | null)?.dataset.confirm ?? f.dataset.confirm;
+        if (msg && !confirm(msg)) e.preventDefault();
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,30 @@
+# PLANTILLA — NO ACTIVA (no está en .github/workflows/). Ver "Backups > Activación" en el README.
+# Hace una consulta mínima de solo lectura a la base de datos (vía API REST con la clave pública
+# anon, que ya es pública en la web) para que Supabase Free no pause el proyecto por inactividad.
+name: Keep-alive Supabase
+
+on:
+  workflow_dispatch:
+  # schedule:
+  #   - cron: '41 9 */3 * *'   # cada 3 días
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Consulta mínima (sin secretos => no hace nada)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::notice::Keep-alive desactivado: faltan SUPABASE_URL / SUPABASE_ANON_KEY."; exit 0
+          fi
+          code=$(curl -s -o /dev/null -w '%{http_code}' \
+            -H "apikey: $SUPABASE_ANON_KEY" -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            "${SUPABASE_URL%/}/rest/v1/opening_hours?select=weekday&limit=1")
+          echo "HTTP $code"
+          [ "$code" = 200 ]

@@ -1,0 +1,83 @@
+# PLANTILLA — NO ACTIVA. Este fichero NO está en .github/workflows/, así que GitHub no lo ejecuta.
+# Para activarlo, sigue "Backups > Activación" en el README: cópialo a .github/workflows/backup.yml
+# del repositorio PRIVADO de backups (recomendado) o de este repo, y descomenta `schedule`.
+#
+# Hace: pg_dump (esquema public + usuarios de Auth) + exportación de todos los buckets de Storage
+# -> tar.gz -> cifrado gpg AES256 (BACKUP_ENCRYPTION_KEY) -> S3 compatible (Cloudflare R2),
+# conservando los 30 más recientes. No sube artefactos ni imprime datos.
+name: Backup Supabase
+
+on:
+  workflow_dispatch:
+  # schedule:
+  #   - cron: '17 3 * * *'   # diario, 03:17 UTC (05:17 en Madrid en verano, 04:17 en invierno)
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Comprobar configuración (sin secretos => no hace nada)
+        id: guard
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+          BACKUP_S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
+          BACKUP_S3_BUCKET: ${{ secrets.BACKUP_S3_BUCKET }}
+          BACKUP_S3_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
+          BACKUP_S3_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
+        run: |
+          missing=""
+          for v in SUPABASE_DB_URL SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY BACKUP_ENCRYPTION_KEY \
+                   BACKUP_S3_ENDPOINT BACKUP_S3_BUCKET BACKUP_S3_ACCESS_KEY_ID BACKUP_S3_SECRET_ACCESS_KEY; do
+            [ -n "${!v}" ] || missing="$missing $v"
+          done
+          if [ -n "$missing" ]; then
+            echo "::notice::Backup desactivado: faltan secretos:$missing. No se hace nada."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Scripts: de este mismo repo o, desde un repo privado, del repo público de la web
+      # (variable de repositorio LX_SCRIPTS_REPO, p. ej. xLu1s/web-la-ximenera).
+      - uses: actions/checkout@v4
+        if: steps.guard.outputs.enabled == 'true'
+        with:
+          repository: ${{ vars.LX_SCRIPTS_REPO || github.repository }}
+          ref: ${{ vars.LX_SCRIPTS_REF || '' }}
+          sparse-checkout: scripts
+          persist-credentials: false
+
+      - name: Cliente de Postgres 17
+        if: steps.guard.outputs.enabled == 'true'
+        run: |
+          sudo apt-get install -y -qq postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -qq postgresql-client-17
+
+      - name: Backup cifrado a R2
+        if: steps.guard.outputs.enabled == 'true'
+        env:
+          PG_DUMP: /usr/lib/postgresql/17/bin/pg_dump
+          PSQL: /usr/lib/postgresql/17/bin/psql
+          BACKUP_KEEP: '30'
+          BACKUP_PREFIX: la-ximenera/
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+          BACKUP_S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
+          BACKUP_S3_BUCKET: ${{ secrets.BACKUP_S3_BUCKET }}
+          BACKUP_S3_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
+          BACKUP_S3_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
+        run: bash scripts/backup.sh

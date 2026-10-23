@@ -12,8 +12,12 @@ import { site } from '../data/site';
       <p class="location__note">Rooftop con terraza exterior, en el ático.</p>
       <a class="btn" href={site.mapsLink} target="_blank" rel="noopener">Abrir en Google Maps</a>
     </div>
-    <div class="map">
-      <iframe title="Mapa: La Ximenera - Rooftop, C/ Regiment Biscaia 2, Ático, Alcoy" src={site.mapsEmbed} loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+    <div class="map" data-map data-src={site.mapsEmbed}>
+      <div class="map__consent" data-map-consent>
+        <p>El mapa lo sirve Google Maps, que puede instalar cookies propias.</p>
+        <button type="button" class="btn btn--small map__btn" data-map-load>Mostrar mapa</button>
+        <p class="map__small"><a href="/cookies">Política de cookies</a></p>
+      </div>
     </div>
   </div>
 </section>

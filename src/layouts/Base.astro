@@ -2,9 +2,10 @@
 import '../styles/global.css';
 import { site } from '../data/site';
 import { publicUrl } from '../lib/base';
+import { FALLBACK_HOURS, jsonLdHours, type OpeningHour } from '../lib/hours';
 
-interface Props { title: string; description: string }
-const { title, description } = Astro.props;
+interface Props { title: string; description: string; hours?: OpeningHour[]; structuredData?: boolean; noindex?: boolean }
+const { title, description, hours = FALLBACK_HOURS, structuredData = true, noindex = false } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = new URL(publicUrl('og-image.jpg'), Astro.site);
 const menuUrl = new URL(publicUrl('#carta'), Astro.site);
@@ -36,13 +37,7 @@ const jsonLd = {
   geo: { '@type': 'GeoCoordinates', latitude: site.geo.lat, longitude: site.geo.lng },
   hasMap: site.mapsLink,
   sameAs: [site.instagram, site.facebook],
-  openingHoursSpecification: [
-    { '@type': 'OpeningHoursSpecification', dayOfWeek: ['Tuesday', 'Wednesday', 'Thursday', 'Friday'], opens: '13:30', closes: '16:00' },
-    { '@type': 'OpeningHoursSpecification', dayOfWeek: ['Tuesday', 'Wednesday', 'Thursday', 'Friday'], opens: '20:30', closes: '23:00' },
-    { '@type': 'OpeningHoursSpecification', dayOfWeek: 'Saturday', opens: '12:30', closes: '16:30' },
-    { '@type': 'OpeningHoursSpecification', dayOfWeek: 'Saturday', opens: '20:00', closes: '23:59' },
-    { '@type': 'OpeningHoursSpecification', dayOfWeek: 'Sunday', opens: '13:00', closes: '16:00' },
-  ],
+  openingHoursSpecification: jsonLdHours(hours),
 };
 ---
 <!doctype html>
@@ -69,7 +64,8 @@ const jsonLd = {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet" />
 
-    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    {structuredData && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+    {noindex && <meta name="robots" content="noindex" />}
   </head>
   <body>
     <a class="skip-link" href="#contenido">Saltar al contenido</a>

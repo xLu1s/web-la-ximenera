@@ -1,10 +1,11 @@
 ---
-import { site } from '../data/site';
 import { publicUrl } from '../lib/base';
+interface Props { hasSpecials?: boolean }
+const { hasSpecials = false } = Astro.props;
 ---
 <header class="header" data-header>
   <div class="container header__inner">
-    <a href="#inicio" class="brand" aria-label="La Ximenera, inicio">
+    <a href="/#inicio" class="brand" aria-label="La Ximenera, inicio">
       <img src={publicUrl('logo.svg')} alt="" width="36" height="36" />
       <span>La Ximenera</span>
     </a>
@@ -13,10 +14,12 @@ import { publicUrl } from '../lib/base';
     </button>
     <nav id="menu-principal" class="nav" aria-label="Principal" data-nav>
       <a href="#nosotros">Nosotros</a>
+      {hasSpecials && <a href="#menus-especiales">Especiales</a>}
       <a href="#carta">Carta</a>
+      <a href="#vinos">Vinos</a>
       <a href="#horario">Horario</a>
       <a href="#ubicacion">Ubicación</a>
-      <a class="btn btn--small" href={`tel:${site.phoneE164}`}>Reservar</a>
+      <a class="btn btn--small" href="#reservar">Reservar</a>
     </nav>
   </div>
 </header>

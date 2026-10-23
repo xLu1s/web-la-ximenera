@@ -1,0 +1,72 @@
+---
+import { site } from '../data/site';
+import { HONEYPOT_FIELD } from '../lib/booking';
+import { todayMadrid } from '../lib/time';
+interface Props { maxParty: number }
+const { maxParty } = Astro.props;
+const today = todayMadrid();
+---
+<section id="reservar" class="section contact booking" aria-labelledby="contact-title">
+  <span id="contacto" class="sr-only"></span>
+  <div class="container contact__box reveal">
+    <h2 id="contact-title">¿Reservamos mesa?</h2>
+    <p>Reserva online en un minuto: recibirás la confirmación por email al momento.</p>
+
+    <form class="bk" data-booking-form method="post" action="/api/reservas" novalidate data-max-party={maxParty}>
+      <div class="bk__grid">
+        <label class="bk__field">
+          <span>Fecha</span>
+          <input type="date" name="date" required min={today} data-bk-date />
+        </label>
+        <label class="bk__field">
+          <span>Personas</span>
+          <select name="party" required data-bk-party>
+            {Array.from({ length: maxParty }, (_, i) => i + 1).map((n) => <option value={n} selected={n === 2}>{n} {n === 1 ? 'persona' : 'personas'}</option>)}
+          </select>
+        </label>
+        <label class="bk__field bk__field--wide">
+          <span>Hora</span>
+          <select name="time" required data-bk-time disabled>
+            <option value="">Elige primero una fecha</option>
+          </select>
+          <small class="bk__hint" data-bk-hint aria-live="polite"></small>
+        </label>
+        <label class="bk__field">
+          <span>Nombre</span>
+          <input type="text" name="name" required minlength="2" maxlength="100" autocomplete="name" />
+        </label>
+        <label class="bk__field">
+          <span>Teléfono</span>
+          <input type="tel" name="phone" required autocomplete="tel" inputmode="tel" maxlength="20" placeholder="600 000 000" />
+        </label>
+        <label class="bk__field bk__field--wide">
+          <span>Email</span>
+          <input type="email" name="email" required autocomplete="email" maxlength="254" />
+        </label>
+        <label class="bk__field bk__field--wide">
+          <span>Observaciones <em>(opcional)</em></span>
+          <textarea name="notes" rows="2" maxlength="500" placeholder="Alergias, trona, celebración…"></textarea>
+        </label>
+        <div class="bk__hp" aria-hidden="true">
+          <label>No rellenes este campo <input type="text" name={HONEYPOT_FIELD} tabindex="-1" autocomplete="off" /></label>
+        </div>
+        <label class="bk__consent bk__field--wide">
+          <input type="checkbox" name="consent" value="on" required />
+          <span>He leído y acepto la <a href="/privacidad" target="_blank">política de privacidad</a>. Usaremos tus datos solo para gestionar esta reserva.</span>
+        </label>
+      </div>
+      <p class="bk__error" role="alert" data-bk-error hidden></p>
+      <button class="btn btn--gold bk__submit" type="submit" data-bk-submit>Reservar</button>
+      <noscript><p class="bk__hint">Para reservar online necesitas JavaScript.</p></noscript>
+    </form>
+
+    <div class="bk__ok" data-bk-ok hidden tabindex="-1">
+      <h3>¡Reserva confirmada!</h3>
+      <p data-bk-ok-text></p>
+      <p class="bk__ref">Referencia: <strong data-bk-ref></strong></p>
+      <p class="bk__hint">Te hemos enviado un email con los detalles y un enlace para cancelar si lo necesitas.</p>
+    </div>
+    <p class="contact__extra">Síguenos en <a href={site.instagram} target="_blank" rel="noopener">Instagram</a> · <a href={site.facebook} target="_blank" rel="noopener">Facebook</a></p>
+  </div>
+</section>
+<script src="../scripts/booking.ts"></script>

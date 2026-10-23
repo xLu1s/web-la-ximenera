@@ -1,0 +1,46 @@
+---
+import { WINE_TYPES, WINES_PROVISIONAL_MESSAGE, formatEuro, type WineRow } from '../lib/content';
+interface Props { wines: WineRow[] }
+const wines = Astro.props.wines.filter((w) => w.visible);
+const groups = Object.entries(WINE_TYPES)
+  .map(([type, label]) => ({ type, label, items: wines.filter((w) => w.wine_type === type) }))
+  .filter((g) => g.items.length > 0);
+---
+<section id="vinos" class="section wines" aria-labelledby="wines-title" data-wines={wines.length > 0 ? 'list' : 'provisional'}>
+  <div class="container">
+    <div class="section__head reveal">
+      <p class="eyebrow">Bodega</p>
+      <h2 id="wines-title">Carta de <em>vinos</em></h2>
+    </div>
+    {wines.length === 0 ? (
+      <div class="wines__soon reveal" data-wines-provisional>
+        <p class="wines__soon-text">{WINES_PROVISIONAL_MESSAGE}</p>
+        <p class="wines__soon-sub">Mientras tanto, pregunta a nuestro equipo por las referencias de la bodega.</p>
+      </div>
+    ) : (
+      <div class="wines__card reveal">
+        {groups.map((g) => (
+          <div class="wines__group">
+            <h3>{g.label}</h3>
+            <ul class="wines__list" role="list">
+              {g.items.map((w) => (
+                <li class="wines__item" data-wine>
+                  <span class="wines__name">
+                    {w.name}
+                    {w.origin && <span class="wines__origin">{w.origin}</span>}
+                    {w.description && <span class="wines__desc">{w.description}</span>}
+                  </span>
+                  <span class="carta__dots" aria-hidden="true"></span>
+                  <span class="wines__price">
+                    {w.price_glass != null && <span class="wines__glass">Copa {formatEuro(w.price_glass)}</span>}
+                    {w.price_bottle != null ? <span>Botella {formatEuro(w.price_bottle)}</span> : (w.price_glass == null && <span class="carta__noprice">consultar</span>)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+</section>

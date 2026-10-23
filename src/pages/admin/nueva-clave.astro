@@ -1,0 +1,73 @@
+---
+export const prerender = false;
+import Admin from '../../layouts/Admin.astro';
+const sb = Astro.locals.supabase;
+let error = '';
+const code = Astro.url.searchParams.get('code');
+const tokenHash = Astro.url.searchParams.get('token_hash');
+if (Astro.request.method === 'GET' && code) {
+  const { error: e } = await sb.auth.exchangeCodeForSession(code);
+  if (e) error = 'El enlace no es válido o ha caducado. Pide uno nuevo.';
+  else return Astro.redirect('/admin/nueva-clave', 303);
+} else if (Astro.request.method === 'GET' && tokenHash) {
+  // Enlaces de recuperación y de invitación (plantilla de email con token_hash y type).
+  const type = Astro.url.searchParams.get('type') === 'invite' ? 'invite' : 'recovery';
+  const { error: e } = await sb.auth.verifyOtp({ token_hash: tokenHash, type });
+  if (e) error = 'El enlace no es válido o ha caducado. Pide uno nuevo.';
+  else return Astro.redirect('/admin/nueva-clave', 303);
+}
+// Enlaces con la plantilla por defecto de Supabase (invitación / recuperación en flujo implícito):
+// los tokens llegan en el #fragmento y el script de abajo los envía aquí por POST.
+let fd: FormData | null = null;
+if (Astro.request.method === 'POST') {
+  fd = await Astro.request.formData();
+  const at = String(fd.get('access_token') ?? ''), rt = String(fd.get('refresh_token') ?? '');
+  if (at && rt) {
+    const { error: e } = await sb.auth.setSession({ access_token: at, refresh_token: rt });
+    if (e) error = 'El enlace no es válido o ha caducado. Pide uno nuevo.';
+    else return Astro.redirect('/admin/nueva-clave', 303);
+    fd = null;
+  }
+}
+const { data: { user } } = await sb.auth.getUser();
+if (fd) {
+  const p1 = String(fd.get('password') ?? ''), p2 = String(fd.get('password2') ?? '');
+  if (!user) error = 'La sesión de recuperación ha caducado. Pide un enlace nuevo.';
+  else if (p1.length < 8) error = 'La contraseña debe tener al menos 8 caracteres.';
+  else if (p1 !== p2) error = 'Las contraseñas no coinciden.';
+  else {
+    const { error: e } = await sb.auth.updateUser({ password: p1 });
+    if (e) error = 'No se pudo cambiar la contraseña: ' + (/same|different/i.test(e.message) ? 'debe ser distinta de la anterior.' : 'inténtalo de nuevo.');
+    else return Astro.redirect('/admin/reservas?ok=' + encodeURIComponent('Contraseña actualizada.'), 303);
+  }
+}
+---
+<Admin title="Nueva contraseña" bare>
+  {error && <p class="adm__flash adm__flash--err" role="alert">{error}</p>}
+  <p class="adm__flash adm__flash--err" role="alert" data-hash-error hidden></p>
+  <form method="post" data-hash-form hidden><input type="hidden" name="access_token" /><input type="hidden" name="refresh_token" /></form>
+  <script is:inline>
+    (function () {
+      var h = new URLSearchParams(location.hash.slice(1));
+      if (!h.toString()) return;
+      history.replaceState(null, '', location.pathname);
+      var f = document.querySelector('[data-hash-form]');
+      if (h.get('access_token') && h.get('refresh_token') && f) {
+        f.access_token.value = h.get('access_token'); f.refresh_token.value = h.get('refresh_token'); f.submit();
+      } else if (h.get('error_description')) {
+        var el = document.querySelector('[data-hash-error]');
+        el.textContent = 'El enlace no es válido o ha caducado. Pide uno nuevo.'; el.hidden = false;
+      }
+    })();
+  </script>
+  {user ? (
+    <form method="post" class="card">
+      <p class="help">Cuenta: {user.email}</p>
+      <label class="f">Contraseña nueva (mín. 8 caracteres) <input type="password" name="password" required minlength="8" autocomplete="new-password" /></label>
+      <label class="f" style="margin-top:.75rem">Repite la contraseña <input type="password" name="password2" required minlength="8" autocomplete="new-password" /></label>
+      <button class="btn" type="submit" style="width:100%;margin-top:1rem">Guardar contraseña</button>
+    </form>
+  ) : (
+    <p class="help"><a href="/admin/recuperar">Pedir un enlace nuevo</a></p>
+  )}
+</Admin>
