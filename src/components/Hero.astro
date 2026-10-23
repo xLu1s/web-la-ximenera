@@ -1,7 +1,6 @@
 ---
 import { Picture } from 'astro:assets';
 import { site } from '../data/site';
-import { instagramCredit } from '../data/gallery';
 // Foto oficial del Instagram @laximenera_restaurante, post https://www.instagram.com/p/Da-16HSCJVO/ (19/07/2026):
 // comedor del nuevo local (vigas de madera, pared de piedra, bodega acristalada). Versión retocada sin la camarera, 1440×1440.
 import heroImg from '../assets/hero/comedor-rooftop.jpg';
@@ -36,5 +35,4 @@ const { closedNote = 'Cerrado los lunes' } = Astro.props;
     <p class="hero__note hero__anim" style="--d:.85s">Reserva online en un minuto{closedNote && ` · ${closedNote}`}</p>
   </div>
   <a href="#nosotros" class="hero__scroll" aria-label="Bajar a la siguiente sección"><span></span></a>
-  <p class="hero__credit"><a href="https://www.instagram.com/p/Da-16HSCJVO/" target="_blank" rel="noopener">{instagramCredit}</a></p>
 </section>

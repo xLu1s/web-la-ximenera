@@ -1,7 +1,6 @@
 ---
 import { Image } from 'astro:assets';
 import { ALLERGENS, type Allergen, type MenuCategoryRow, type SpecialMenuRow } from '../lib/content';
-import { instagram, instagramCredit } from '../data/gallery';
 // Fotos oficiales del Instagram @laximenera_restaurante (posts en src/data/gallery.ts)
 import ig03 from '../assets/instagram/ig-03.jpg';
 import ig06 from '../assets/instagram/ig-06.jpg';
@@ -35,7 +34,6 @@ const tabId = (s: MenuCategoryRow) => s.slug;
         ))}
       </ul>
     </div>
-    <p class="highlights__credit"><a href={instagram.url} target="_blank" rel="noopener">{instagramCredit}</a></p>
 
     <div class="tabs reveal" role="tablist" aria-label="Secciones de la carta" data-menu-tabs>
       {menu.map((s, i) => (

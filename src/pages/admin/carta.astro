@@ -59,9 +59,10 @@ const [cats, items] = await Promise.all([
 ]);
 const categories = (cats.data ?? []).map((c) => ({ ...c, items: (items.data ?? []).filter((i) => i.category_id === c.id) }));
 const allergenEntries = Object.entries(ALLERGENS);
+const nextOrder = (rows: { sort_order: number }[]) => rows.reduce((m, r) => Math.max(m, r.sort_order), 0) + 1;
 ---
 <Admin title="Carta" section="carta">
-  <p class="help">Cada sección es una pestaña de la carta en la web. «Orden»: los números más bajos salen primero. Desmarca «Visible» para ocultar algo sin borrarlo. El precio se escribe tal cual se quiere mostrar (p. ej. «12,90 €», «4,20 €/u» o «S/M»).</p>
+  <p class="help">Cada sección es una pestaña de la carta en la web. «Orden»: 1 sale primero, luego 2, 3… Al añadir algo nuevo se propone el siguiente número (sale al final). Desmarca «Visible» para ocultar algo sin borrarlo. El precio se escribe tal cual se quiere mostrar (p. ej. «12,90 €», «4,20 €/u» o «S/M»).</p>
   {categories.map((c) => (
     <details class="card" id={`cat-${c.id}`} data-category={c.slug} open={categories.length <= 1}>
       <summary><strong>{c.title}</strong> <span class="badge">{c.items.length} platos</span> {!c.visible && <span class="badge badge--warn">oculta</span>}</summary>
@@ -70,7 +71,7 @@ const allergenEntries = Object.entries(ALLERGENS);
         <label class="f">Pestaña <input name="tab" value={c.tab} maxlength="40" required /></label>
         <label class="f">Título <input name="title" value={c.title} maxlength="120" required /></label>
         <label class="f">Subtítulo <input name="subtitle" value={c.subtitle ?? ''} maxlength="120" /></label>
-        <label class="f">Orden <input type="number" name="sort_order" value={c.sort_order} /></label>
+        <label class="f">Orden (1 = sale primero) <input type="number" name="sort_order" min="1" value={c.sort_order} /></label>
         <label class="f f--wide">Introducción <textarea name="intro" maxlength="600">{c.intro ?? ''}</textarea></label>
         <label class="f f--wide">Notas al pie (una por línea) <textarea name="notes">{(c.notes ?? []).join('\n')}</textarea></label>
         <label class="f--check"><input type="checkbox" name="visible" checked={c.visible} /> Visible</label>
@@ -89,7 +90,7 @@ const allergenEntries = Object.entries(ALLERGENS);
               <label class="f f--wide">Descripción <input name="description" value={it.description ?? ''} maxlength="600" /></label>
               <label class="f">Precio <input name="price" value={it.price ?? ''} maxlength="40" /></label>
               <label class="f">½ ración <input name="half_price" value={it.half_price ?? ''} maxlength="40" /></label>
-              <label class="f">Orden <input type="number" name="sort_order" value={it.sort_order} /></label>
+              <label class="f">Orden (1 = sale primero) <input type="number" name="sort_order" min="1" value={it.sort_order} /></label>
               <label class="f--check"><input type="checkbox" name="visible" checked={it.visible} /> Visible</label>
             </div>
             <fieldset class="allergens" style="border:0;padding:0;margin:.5rem 0 0"><legend class="help">Alérgenos</legend>
@@ -109,7 +110,7 @@ const allergenEntries = Object.entries(ALLERGENS);
             <label class="f f--wide">Descripción <input name="description" maxlength="600" /></label>
             <label class="f">Precio <input name="price" maxlength="40" placeholder="12,90 €" /></label>
             <label class="f">½ ración <input name="half_price" maxlength="40" /></label>
-            <label class="f">Orden <input type="number" name="sort_order" value={(c.items.at(-1)?.sort_order ?? 0) + 10} /></label>
+            <label class="f">Orden (1 = sale primero) <input type="number" name="sort_order" min="1" value={nextOrder(c.items)} /></label>
             <label class="f--check"><input type="checkbox" name="visible" checked /> Visible</label>
           </div>
           <fieldset class="allergens" style="border:0;padding:0;margin:.5rem 0 0"><legend class="help">Alérgenos</legend>
@@ -126,7 +127,7 @@ const allergenEntries = Object.entries(ALLERGENS);
     <label class="f">Pestaña <input name="tab" maxlength="40" placeholder="Arroces" /></label>
     <label class="f">Título <input name="title" maxlength="120" required /></label>
     <label class="f">Subtítulo <input name="subtitle" maxlength="120" /></label>
-    <label class="f">Orden <input type="number" name="sort_order" value={(categories.at(-1)?.sort_order ?? 0) + 10} /></label>
+    <label class="f">Orden (1 = sale primero) <input type="number" name="sort_order" min="1" value={nextOrder(categories)} /></label>
     <input type="hidden" name="visible" value="on" />
     <div class="actions f--wide"><button class="btn" type="submit">Crear sección</button></div>
   </form>

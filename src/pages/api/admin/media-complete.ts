@@ -29,11 +29,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const sb = locals.supabase; // escrituras con la sesión del admin (RLS)
   if (purpose === 'gallery') {
     const caption = String(b.caption ?? '').trim().slice(0, 300);
-    const credit = String(b.credit ?? '').trim().slice(0, 160) || null;
     const { data: last } = await sb.from('gallery_items').select('sort_order').order('sort_order', { ascending: false }).limit(1).maybeSingle();
     const { data, error } = await sb.from('gallery_items').insert({
       media_type: v.value.mediaType, storage_path: path, mime_type: meta.mimetype, size_bytes: meta.size,
-      caption, credit, sort_order: (last?.sort_order ?? 0) + 10, visible: true,
+      caption, sort_order: (last?.sort_order ?? 0) + 1, visible: true,
     }).select('id').single();
     if (error) { await svc.storage.from('media').remove([path]); return json({ ok: false, message: dbErrorMessage(error) }, 400); }
     return json({ ok: true, id: data.id });

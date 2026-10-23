@@ -11,7 +11,7 @@ export const GET: APIRoute = async ({ url }) => {
   const day = url.searchParams.get('fecha') ?? '';
   const party = Number(url.searchParams.get('personas') ?? '2');
   if (!isValidDate(day)) return json({ ok: false, message: 'Fecha no válida.' }, 400);
-  if (!env.supabaseServiceRoleKey) return json({ ok: false, message: 'Las reservas online no están disponibles ahora mismo. Llámanos, por favor.' }, 503);
+  if (!env.supabaseServiceRoleKey) return json({ ok: false, message: 'Las reservas online no están disponibles ahora mismo. Inténtalo más tarde, por favor.' }, 503);
   if (day < todayMadrid()) return json({ ok: true, services: [], message: 'Esa fecha ya ha pasado.' });
   const db = serviceClient();
   const [st, settings] = await Promise.all([
@@ -27,7 +27,7 @@ export const GET: APIRoute = async ({ url }) => {
   const p = Number.isInteger(party) && party >= 1 ? Math.min(party, settings.data.max_party_size) : 1;
   const services = computeAvailability(day, rows, settings.data.slot_minutes, p);
   const message = services.every((s) => !s.available)
-    ? (rows.every((r) => r.is_closed) ? 'Ese día no admitimos reservas online. Llámanos si lo necesitas.' : 'No quedan horas disponibles ese día para ese número de personas.')
+    ? (rows.every((r) => r.is_closed) ? 'Ese día no admitimos reservas online. Elige otro día, por favor.' : 'No quedan horas disponibles ese día para ese número de personas.')
     : '';
   return json({ ok: true, services, message });
 };

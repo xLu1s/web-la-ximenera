@@ -1,6 +1,17 @@
 import { test, expect } from '@playwright/test';
 import { apiBook, emailsTo, futureDate, MON, sql, SAT, TUE, uniqueIp, validBooking } from './helpers';
 
+test('la portada (contenido de la base de datos) no se cachea en la CDN', async ({ request }) => {
+  const r = await request.get('/');
+  expect(r.status()).toBe(200);
+  const h = r.headers();
+  const all = [h['cache-control'], h['cdn-cache-control'], h['vercel-cdn-cache-control']].join(' | ');
+  expect(all).not.toMatch(/s-maxage|stale-while-revalidate|public/);
+  expect(h['cache-control']).toContain('no-store');
+  expect(h['cdn-cache-control']).toBe('no-store');
+  expect(h['vercel-cdn-cache-control']).toBe('no-store');
+});
+
 test.describe('API /api/reservas: reglas y anti-spam', () => {
   test('validaciones con mensajes en español', async ({ request }) => {
     const day = futureDate(220, TUE);

@@ -25,7 +25,10 @@ if (Astro.request.method === 'POST') {
   if (error) return redirectWith('/admin/vinos', dbErrorMessage(error), 'err');
   return redirectWith('/admin/vinos', `Vino «${v.value.name}» guardado.`);
 }
-const { data } = await sb.from('wines').select('*').order('wine_type').order('sort_order').order('name');
+const { data } = await sb.from('wines').select('*').order('wine_type').order('sort_order').order('name').order('id');
+const nextByType: Record<string, number> = {};
+for (const w of data ?? []) nextByType[w.wine_type] = Math.max(nextByType[w.wine_type] ?? 0, w.sort_order);
+for (const k of Object.keys(WINE_TYPES)) nextByType[k] = (nextByType[k] ?? 0) + 1;
 const wines = (data ?? []) as WineRow[];
 const visibleCount = wines.filter((w) => w.visible).length;
 const euro = (n: number | null) => (n == null ? '' : String(n).replace('.', ','));
@@ -43,7 +46,7 @@ const euro = (n: number | null) => (n == null ? '' : String(n).replace('.', ',')
         <label class="f">D.O. / origen <input name="origin" value={w.origin ?? ''} maxlength="160" /></label>
         <label class="f">Precio botella (€) <input name="price_bottle" value={euro(w.price_bottle)} inputmode="decimal" /></label>
         <label class="f">Precio copa (€) <input name="price_glass" value={euro(w.price_glass)} inputmode="decimal" /></label>
-        <label class="f">Orden <input type="number" name="sort_order" value={w.sort_order} /></label>
+        <label class="f">Orden (1 = sale primero) <input type="number" name="sort_order" min="1" value={w.sort_order} /></label>
         <label class="f f--wide">Nota (opcional) <input name="description" value={w.description ?? ''} maxlength="400" /></label>
         <label class="f--check"><input type="checkbox" name="visible" checked={w.visible} /> Visible</label>
       </div>
@@ -62,10 +65,18 @@ const euro = (n: number | null) => (n == null ? '' : String(n).replace('.', ',')
       <label class="f">D.O. / origen <input name="origin" maxlength="160" placeholder="D.O. Alicante" /></label>
       <label class="f">Precio botella (€) <input name="price_bottle" inputmode="decimal" placeholder="18,50" /></label>
       <label class="f">Precio copa (€) <input name="price_glass" inputmode="decimal" placeholder="3,50" /></label>
-      <label class="f">Orden <input type="number" name="sort_order" value="0" /></label>
+      <label class="f">Orden (1 = sale primero) <input type="number" name="sort_order" min="1" placeholder="Al final de su tipo" data-next-order={JSON.stringify(nextByType)} /></label>
       <label class="f f--wide">Nota (opcional) <input name="description" maxlength="400" /></label>
       <label class="f--check"><input type="checkbox" name="visible" checked /> Visible</label>
     </div>
     <div class="actions"><button class="btn" type="submit">Añadir vino</button></div>
   </form>
+  <script is:inline>
+    (function () {
+      var f = document.querySelector('[data-new-wine]'); if (!f) return;
+      var o = f.querySelector('[data-next-order]'), t = f.querySelector('[name="wine_type"]');
+      var next = JSON.parse(o.dataset.nextOrder || '{}');
+      t.addEventListener('change', function () { if (next[t.value]) o.value = next[t.value]; });
+    })();
+  </script>
 </Admin>

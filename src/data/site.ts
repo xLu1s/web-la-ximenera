@@ -48,7 +48,6 @@ export const hours = [
  *  postre.jpg       https://foto1.sluurpy.com/locali/es/7958518/52865327.jpg
  * Fotos de sala eliminadas (podían ser del local anterior). Fotos oficiales: ver gallery.ts.
  */
-export const photoCredit = 'Fotos públicas de clientes (TripAdvisor / Sluurpy), uso provisional pendiente de permiso';
 
 
 /** Valoraciones agregadas con fuente (no citas inventadas). */

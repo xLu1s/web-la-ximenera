@@ -1,7 +1,8 @@
 ---
 // Página principal renderizada en el servidor: el contenido (carta, vinos, menús especiales,
 // galería, horario) se lee de Supabase y lo edita el restaurante desde /admin.
-// En Vercel se cachea en la CDN 60 s (stale-while-revalidate) para que sea igual de rápida.
+// Sin caché en la CDN: los cambios del panel se ven en la siguiente carga. Los recursos estáticos
+// (/_astro/*, imágenes) sí se cachean mucho tiempo.
 export const prerender = false;
 import Base from '../layouts/Base.astro';
 import Header from '../components/Header.astro';
@@ -20,8 +21,9 @@ import { getPublicContent } from '../lib/content';
 import { closedNote } from '../lib/hours';
 
 const content = await getPublicContent();
-Astro.response.headers.set('Cache-Control', 'public, max-age=0, must-revalidate');
-Astro.response.headers.set('CDN-Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+Astro.response.headers.set('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+Astro.response.headers.set('CDN-Cache-Control', 'no-store');
+Astro.response.headers.set('Vercel-CDN-Cache-Control', 'no-store');
 ---
 <Base
   title="La Ximenera Rooftop · Restaurante en Alcoi (Alcoy) · Brasería mediterránea"

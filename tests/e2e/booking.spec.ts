@@ -30,6 +30,24 @@ test.describe('Formulario público de reservas', () => {
     expect(ld.map((t) => JSON.parse(t)).some((d) => d.telephone === '+34681143795')).toBe(true);
   });
 
+  test('sin créditos de foto en la web pública (los alt de las imágenes se mantienen)', async ({ page, request }) => {
+    for (const path of ['/', '/privacidad', '/aviso-legal', '/cookies']) {
+      const html = await (await request.get(path)).text();
+      const visible = html.replace(/<script[\s\S]*?<\/script>/g, '');
+      expect(visible, path).not.toMatch(/Foto:|Fotos? de cliente|cr[eé]ditos? de (las )?im[aá]genes|Fotos oficiales de|TripAdvisor \/ Sluurpy/i);
+      expect(visible, path).not.toMatch(/hero__credit|highlights__credit|gallery__credit|gallery__tag/);
+    }
+    await page.goto('/');
+    await expect(page.locator('.about__photo figcaption, .hero__credit, .gallery__tag, .gallery__credit, .highlights__credit')).toHaveCount(0);
+    const body = await page.locator('body').innerText();
+    expect(body).not.toMatch(/Foto:|foto de cliente/i);
+    // los textos alternativos siguen ahí
+    const alts = await page.locator('[data-gallery-item] img').evaluateAll((els) => els.map((e) => e.getAttribute('alt') ?? ''));
+    expect(alts.length).toBeGreaterThan(0);
+    expect(alts.every((a) => a.trim().length > 3)).toBe(true);
+    expect(await page.locator('.about__photo img').getAttribute('alt')).toBeTruthy();
+  });
+
   test('reserva válida desde el formulario: confirmación, referencia y emails (cliente + propietario)', async ({ page, request }) => {
     await page.setExtraHTTPHeaders({ 'x-forwarded-for': uniqueIp() });
     const day = futureDate(200, TUE);

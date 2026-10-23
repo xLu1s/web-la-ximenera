@@ -29,7 +29,7 @@ export function bookingErrorMessage(code: string, extra: { max?: number; remaini
         ? `No quedan plazas suficientes en ese servicio (quedan ${extra.remaining}). Prueba con menos personas, otra hora u otro día.`
         : 'Ese servicio está completo. Prueba otro horario u otro día.';
     case 'rate_limited': return 'Has hecho demasiados intentos seguidos. Espera unos minutos y vuelve a probarlo.';
-    case 'not_configured': return 'Las reservas online no están disponibles ahora mismo. Llámanos, por favor.';
+    case 'not_configured': return 'Las reservas online no están disponibles ahora mismo. Inténtalo más tarde, por favor.';
     default: return 'No hemos podido registrar la reserva. Inténtalo de nuevo en unos minutos.';
   }
 }

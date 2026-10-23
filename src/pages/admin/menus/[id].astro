@@ -53,7 +53,12 @@ if (!isNew) {
   if (!data) return Astro.redirect('/admin/menus?err=' + encodeURIComponent('Ese menú no existe.'), 303);
   menu = data as SpecialMenuRow;
 }
-const m = menu ?? { kind: 'especial', title: '', subtitle: '', description: '', courses: [], price: '', price_note: '', starts_on: null, ends_on: null, visible: true, sort_order: 0, image_path: null } as unknown as SpecialMenuRow;
+let nextOrder = 1;
+if (isNew) {
+  const { data: last } = await sb.from('special_menus').select('sort_order').eq('kind', 'especial').order('sort_order', { ascending: false }).limit(1).maybeSingle();
+  nextOrder = (last?.sort_order ?? 0) + 1;
+}
+const m = menu ?? { kind: 'especial', title: '', subtitle: '', description: '', courses: [], price: '', price_note: '', starts_on: null, ends_on: null, visible: true, sort_order: nextOrder, image_path: null } as unknown as SpecialMenuRow;
 const courses: Course[] = m.courses.length ? m.courses : [{ title: 'Entrantes', items: [] }, { title: 'Principal', items: [] }, { title: 'Postre', items: [] }];
 const st = menu ? specialStatus(menu, todayMadrid()) : null;
 ---
@@ -68,7 +73,7 @@ const st = menu ? specialStatus(menu, todayMadrid()) : null;
       <label class="f">Subtítulo <input name="subtitle" value={m.subtitle ?? ''} maxlength="160" placeholder="Moros i Cristians" /></label>
       <label class="f">Precio <input name="price" value={m.price ?? ''} maxlength="60" placeholder="45 € por persona" /></label>
       <label class="f">Nota del precio <input name="price_note" value={m.price_note ?? ''} maxlength="160" placeholder="Bebidas no incluidas" /></label>
-      <label class="f">Orden <input type="number" name="sort_order" value={m.sort_order} /></label>
+      <label class="f">Orden (1 = sale primero) <input type="number" name="sort_order" min="1" value={m.sort_order || ''} placeholder="Al final" /></label>
       <label class="f">Visible desde <input type="date" name="starts_on" value={m.starts_on ?? ''} /></label>
       <label class="f">Visible hasta (incluido) <input type="date" name="ends_on" value={m.ends_on ?? ''} /></label>
       <label class="f--check"><input type="checkbox" name="visible" checked={m.visible} /> Visible</label>

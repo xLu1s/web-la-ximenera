@@ -84,11 +84,11 @@ if (form) {
         ok.querySelector('[data-bk-ref]')!.textContent = data.reference ?? '';
         ok.focus();
       } else {
-        showError(data.message ?? 'No hemos podido registrar la reserva. Inténtalo de nuevo o llámanos.', data.field);
+        showError(data.message ?? 'No hemos podido registrar la reserva. Inténtalo de nuevo en unos minutos.', data.field);
         if (data.error === 'full' || data.error === 'blocked') loadSlots();
       }
     } catch {
-      showError('No hay conexión. Inténtalo de nuevo o llámanos.');
+      showError('No hay conexión. Inténtalo de nuevo en unos minutos.');
     } finally {
       submit.disabled = false;
       submit.textContent = 'Reservar';

@@ -10,7 +10,7 @@ import { createRequire } from 'node:module';
 import { menu } from '../src/data/menu.ts';
 import { menuDelDia } from '../src/data/menuDelDia.ts';
 import { hours } from '../src/data/site.ts';
-import { instagramMeta, instagramCredit } from '../src/data/gallery.ts';
+import { instagramMeta } from '../src/data/gallery.ts';
 
 const require = createRequire(import.meta.url);
 const sharp = require('sharp');
@@ -49,11 +49,11 @@ out.push('');
 out.push('-- Carta (src/data/menu.ts)');
 menu.forEach((s, si) => {
   out.push(
-    `insert into public.menu_categories (slug, tab, title, subtitle, intro, notes, sort_order) values (${q(s.id)}, ${q(s.tab)}, ${q(s.title)}, ${q(s.subtitle)}, ${q(s.intro)}, ${arr(s.notes)}, ${(si + 1) * 10});`,
+    `insert into public.menu_categories (slug, tab, title, subtitle, intro, notes, sort_order) values (${q(s.id)}, ${q(s.tab)}, ${q(s.title)}, ${q(s.subtitle)}, ${q(s.intro)}, ${arr(s.notes)}, ${si + 1});`,
   );
   s.items.forEach((it, ii) => {
     out.push(
-      `insert into public.menu_items (category_id, name, price, half_price, allergens, sort_order) select id, ${q(it.name)}, ${q(it.price)}, ${q(it.half)}, ${arr(it.allergens)}, ${(ii + 1) * 10} from public.menu_categories where slug = ${q(s.id)};`,
+      `insert into public.menu_items (category_id, name, price, half_price, allergens, sort_order) select id, ${q(it.name)}, ${q(it.price)}, ${q(it.half)}, ${arr(it.allergens)}, ${ii + 1} from public.menu_categories where slug = ${q(s.id)};`,
     );
   });
 });
@@ -62,15 +62,15 @@ out.push('');
 out.push('-- Menú del día (src/data/menuDelDia.ts). Precio con la misma normalización que ya aplicaba la web ("16.50€" → "16,50 €").');
 const price = menuDelDia.price.replace('.', ',').replace('€', ' €');
 out.push(
-  `insert into public.special_menus (kind, title, subtitle, courses, price, price_note, sort_order) values ('del_dia', 'Menú del día', ${q(menuDelDia.days.replace('Menú de ', ''))}, ${q(JSON.stringify(menuDelDia.courses))}::jsonb, ${q(price)}, ${q(menuDelDia.priceNote)}, 0);`,
+  `insert into public.special_menus (kind, title, subtitle, courses, price, price_note, sort_order) values ('del_dia', 'Menú del día', ${q(menuDelDia.days.replace('Menú de ', ''))}, ${q(JSON.stringify(menuDelDia.courses))}::jsonb, ${q(price)}, ${q(menuDelDia.priceNote)}, 1);`,
 );
 out.push('');
 
 // Galería: mismo orden que la web estática (oficiales por nombre de archivo, luego fotos de clientes).
 mkdirSync('public/galeria', { recursive: true });
-const items: { file: string; src: string; alt: string; credit: string; provisional: boolean }[] = [];
+const items: { file: string; src: string; alt: string; provisional: boolean }[] = [];
 for (const f of readdirSync('src/assets/instagram').filter((f) => /\.(jpe?g|png|webp)$/.test(f)).sort()) {
-  items.push({ file: f, src: `src/assets/instagram/${f}`, alt: instagramMeta[f]?.alt ?? 'Plato de La Ximenera', credit: instagramCredit, provisional: false });
+  items.push({ file: f, src: `src/assets/instagram/${f}`, alt: instagramMeta[f]?.alt ?? 'Plato de La Ximenera', provisional: false });
 }
 const clients = [
   ['pulpo-brasa.jpg', 'Pulpo a la brasa con pimientos y tostas'],
@@ -79,16 +79,16 @@ const clients = [
   ['tartar.jpg', 'Tartar con algas'],
   ['postre.jpg', 'Postre con nata y frutos secos'],
 ];
-for (const [f, alt] of clients) items.push({ file: f, src: `src/assets/photos/${f}`, alt, credit: 'Foto de cliente · provisional', provisional: true });
+for (const [f, alt] of clients) items.push({ file: f, src: `src/assets/photos/${f}`, alt, provisional: true });
 
 out.push('-- Galería (fotos actuales de la web, servidas desde public/galeria/)');
 let n = 0;
 for (const it of items) {
-  n += 10;
+  n += 1;
   const name = it.file.replace(/\.[a-z]+$/, '.webp');
   await sharp(it.src).resize({ width: 760, withoutEnlargement: true }).webp({ quality: 80 }).toFile(`public/galeria/${name}`);
   out.push(
-    `insert into public.gallery_items (media_type, static_path, mime_type, caption, credit, is_provisional, sort_order) values ('image', ${q(`/galeria/${name}`)}, 'image/webp', ${q(it.alt)}, ${q(it.credit)}, ${it.provisional}, ${n});`,
+    `insert into public.gallery_items (media_type, static_path, mime_type, caption, is_provisional, sort_order) values ('image', ${q(`/galeria/${name}`)}, 'image/webp', ${q(it.alt)}, ${it.provisional}, ${n});`,
   );
 }
 out.push('');

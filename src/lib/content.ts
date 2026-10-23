@@ -8,7 +8,7 @@ import { hasSupabase } from './env';
 import { FALLBACK_HOURS, type OpeningHour } from './hours';
 import { menu as staticMenu } from '../data/menu';
 import { menuDelDia as staticMenuDelDia } from '../data/menuDelDia';
-import { instagramMeta, instagramCredit } from '../data/gallery';
+import { instagramMeta } from '../data/gallery';
 
 export type Allergen = 'gluten' | 'crustaceos' | 'huevos' | 'pescado' | 'cacahuetes' | 'soja' | 'lacteos'
   | 'frutos_cascara' | 'apio' | 'mostaza' | 'sesamo' | 'sulfitos' | 'altramuces' | 'moluscos';
@@ -90,7 +90,7 @@ function staticContent(): PublicContent {
     },
     gallery: STATIC_GALLERY.map(([file, caption, provisional], i) => ({
       id: i + 1, media_type: 'image' as const, storage_path: null, static_path: `/galeria/${file}`, mime_type: 'image/webp', caption,
-      credit: provisional ? 'Foto de cliente · provisional' : instagramCredit, is_provisional: provisional, sort_order: i, visible: true, url: `/galeria/${file}`,
+      credit: null, is_provisional: provisional, sort_order: i, visible: true, url: `/galeria/${file}`,
     })),
     hours: FALLBACK_HOURS,
     maxParty: 12,
@@ -105,8 +105,8 @@ export async function getPublicContent(): Promise<PublicContent> {
     const [cats, items, wines, specials, gallery, hours, settings] = await Promise.all([
       db.from('menu_categories').select('*').order('sort_order').order('id'),
       db.from('menu_items').select('*').order('sort_order').order('id'),
-      db.from('wines').select('*').order('sort_order').order('name'),
-      db.from('special_menus').select('*').order('sort_order').order('starts_on', { nullsFirst: true }),
+      db.from('wines').select('*').order('sort_order').order('name').order('id'),
+      db.from('special_menus').select('*').order('sort_order').order('starts_on', { nullsFirst: true }).order('id'),
       db.from('gallery_items').select('*').order('sort_order').order('id'),
       db.from('opening_hours').select('weekday, service, opens, closes, capacity').order('weekday'),
       db.from('settings').select('max_party_size').eq('id', 1).maybeSingle(),

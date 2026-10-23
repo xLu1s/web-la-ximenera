@@ -3,7 +3,7 @@ export const prerender = false;
 import Admin from '../../../layouts/Admin.astro';
 import { specialStatus, type SpecialMenuRow } from '../../../lib/content';
 import { formatDateEs, todayMadrid } from '../../../lib/time';
-const { data } = await Astro.locals.supabase.from('special_menus').select('*').order('kind').order('starts_on', { nullsFirst: true }).order('sort_order');
+const { data } = await Astro.locals.supabase.from('special_menus').select('*').order('kind').order('sort_order').order('starts_on', { nullsFirst: true }).order('id');
 const menus = (data ?? []) as SpecialMenuRow[];
 const today = todayMadrid();
 const badge = { activo: 'badge--ok', programado: 'badge--warn', caducado: 'badge', oculto: 'badge' } as const;

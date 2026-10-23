@@ -19,7 +19,7 @@ if (Astro.request.method === 'POST') {
   if (action === 'save' && id) {
     const caption = fstr(fd, 'caption').slice(0, 300);
     const { error } = await sb.from('gallery_items').update({
-      caption, credit: fstr(fd, 'credit').slice(0, 160) || null, sort_order: fint(fd, 'sort_order'), visible: fbool(fd, 'visible'),
+      caption, sort_order: fint(fd, 'sort_order'), visible: fbool(fd, 'visible'),
     }).eq('id', id);
     if (error) return redirectWith('/admin/galeria', dbErrorMessage(error), 'err');
     return redirectWith('/admin/galeria', 'Cambios guardados.');
@@ -37,7 +37,6 @@ const items = (data ?? []) as GalleryRow[];
         <label class="f f--wide">Archivo (fotos JPG/PNG/WebP/AVIF hasta 10 MB · vídeos MP4/WebM hasta 50 MB)
           <input type="file" accept="image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm" data-file /></label>
         <label class="f">Descripción (para personas con discapacidad visual y buscadores) <input name="caption" maxlength="300" data-extra placeholder="Pulpo a la brasa" /></label>
-        <label class="f">Crédito (opcional) <input name="credit" maxlength="160" data-extra placeholder="Foto: @laximenera_restaurante" /></label>
       </div>
       <div class="actions"><button type="button" class="btn" data-upload>Subir</button></div>
       <p class="upload-status" data-status aria-live="polite"></p>
@@ -50,9 +49,8 @@ const items = (data ?? []) as GalleryRow[];
         <input type="hidden" name="action" value="save" /><input type="hidden" name="id" value={it.id} />
         {it.media_type === 'video' ? <video src={galleryUrl(it)} controls muted preload="metadata"></video> : <img src={galleryUrl(it)} alt={it.caption} loading="lazy" />}
         <label class="f">Descripción <input name="caption" value={it.caption} maxlength="300" /></label>
-        <label class="f">Crédito <input name="credit" value={it.credit ?? ''} maxlength="160" /></label>
         <div class="row">
-          <label class="f" style="width:90px">Orden <input type="number" name="sort_order" value={it.sort_order} /></label>
+          <label class="f" style="width:150px">Orden (1 = sale primero) <input type="number" name="sort_order" min="1" value={it.sort_order} /></label>
           <label class="f--check"><input type="checkbox" name="visible" checked={it.visible} /> Visible</label>
         </div>
         <div class="actions">
