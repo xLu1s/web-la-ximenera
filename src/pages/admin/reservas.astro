@@ -59,7 +59,7 @@ const totalPeople = bookings.filter((b) => b.status === 'confirmada').reduce((n,
 <Admin title="Reservas" section="reservas">
   <form class="card row" method="get">
     <a class="btn btn--light" href={`/admin/reservas?fecha=${addDays(day, -1)}`} aria-label="Día anterior">‹</a>
-    <label class="f" style="flex:1;min-width:180px">Día <input type="date" name="fecha" value={day} onchange="this.form.submit()" /></label>
+    <label class="f f--grow">Día <input type="date" name="fecha" value={day} onchange="this.form.submit()" /></label>
     <a class="btn btn--light" href={`/admin/reservas?fecha=${addDays(day, 1)}`} aria-label="Día siguiente">›</a>
     <a class="btn btn--light" href="/admin/reservas">Hoy</a>
     <noscript><button class="btn" type="submit">Ver</button></noscript>

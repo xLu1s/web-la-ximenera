@@ -50,7 +50,7 @@ const items = (data ?? []) as GalleryRow[];
         {it.media_type === 'video' ? <video src={galleryUrl(it)} controls muted preload="metadata"></video> : <img src={galleryUrl(it)} alt={it.caption} loading="lazy" />}
         <label class="f">Descripción <input name="caption" value={it.caption} maxlength="300" /></label>
         <div class="row">
-          <label class="f" style="width:150px">Orden (1 = sale primero) <input type="number" name="sort_order" min="1" value={it.sort_order} /></label>
+          <label class="f f--order">Orden (1 = sale primero) <input type="number" name="sort_order" min="1" value={it.sort_order} /></label>
           <label class="f--check"><input type="checkbox" name="visible" checked={it.visible} /> Visible</label>
         </div>
         <div class="actions">
