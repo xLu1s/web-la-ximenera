@@ -3,10 +3,17 @@ import '../styles/global.css';
 import { site } from '../data/site';
 import { publicUrl } from '../lib/base';
 import { FALLBACK_HOURS, jsonLdHours, type OpeningHour } from '../lib/hours';
+import { publicLang, t } from '../i18n/public';
 
 interface Props { title: string; description: string; hours?: OpeningHour[]; structuredData?: boolean; noindex?: boolean }
 const { title, description, hours = FALLBACK_HOURS, structuredData = true, noindex = false } = Astro.props;
+const lang = publicLang(Astro.locals.lang);
 const canonical = new URL(Astro.url.pathname, Astro.site);
+const alternate = (code: 'es' | 'en') => {
+  const u = new URL(canonical);
+  u.searchParams.set('lang', code);
+  return u;
+};
 const ogImage = new URL(publicUrl('og-image.jpg'), Astro.site);
 const menuUrl = new URL(publicUrl('#carta'), Astro.site);
 
@@ -41,18 +48,21 @@ const jsonLd = {
 };
 ---
 <!doctype html>
-<html lang="es">
+<html lang={lang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+    <link rel="alternate" hreflang="es" href={alternate('es')} />
+    <link rel="alternate" hreflang="en" href={alternate('en')} />
+    <link rel="alternate" hreflang="x-default" href={alternate('es')} />
     <meta name="theme-color" content="#2B1D14" />
     <link rel="icon" type="image/svg+xml" href={publicUrl('logo.svg')} />
 
     <meta property="og:type" content="restaurant.restaurant" />
-    <meta property="og:locale" content="es_ES" />
+    <meta property="og:locale" content={lang === 'en' ? 'en_GB' : 'es_ES'} />
     <meta property="og:site_name" content="La Ximenera" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
@@ -68,7 +78,7 @@ const jsonLd = {
     {noindex && <meta name="robots" content="noindex" />}
   </head>
   <body>
-    <a class="skip-link" href="#contenido">Saltar al contenido</a>
+    <a class="skip-link" href="#contenido">{t(lang, 'skip')}</a>
     <slot />
     <script src="../scripts/main.ts"></script>
   </body>

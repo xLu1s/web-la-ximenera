@@ -13,6 +13,19 @@ nav?.querySelectorAll('a').forEach((a) =>
   }),
 );
 
+// El idioma conserva el ancla (#carta, #vinos…) para que el enlace siga siendo compartible.
+document.querySelectorAll<HTMLAnchorElement>('[data-lang-link]').forEach((a) => {
+  a.addEventListener('click', (e) => {
+    const code = a.dataset.langLink;
+    if (code !== 'es' && code !== 'en') return;
+    e.preventDefault();
+    const url = new URL(location.href);
+    url.searchParams.set('lang', code);
+    url.hash = location.hash;
+    location.href = url.pathname + url.search + url.hash;
+  });
+});
+
 // Cabecera sólida al hacer scroll
 const header = document.querySelector('[data-header]');
 const onScroll = () => header?.classList.toggle('is-scrolled', window.scrollY > 40);
@@ -122,12 +135,14 @@ if (rv) {
     x0 = null;
   });
   // Leer más
+  const moreLabel = rv.dataset.more || 'Leer más';
+  const lessLabel = rv.dataset.less || 'Leer menos';
   rv.querySelectorAll<HTMLButtonElement>('[data-rv-more]').forEach((b) => b.addEventListener('click', () => {
-    const t = document.getElementById(b.getAttribute('aria-controls')!);
+    const text = document.getElementById(b.getAttribute('aria-controls')!);
     const open = b.getAttribute('aria-expanded') === 'true';
     b.setAttribute('aria-expanded', String(!open));
-    b.textContent = open ? 'Leer más' : 'Leer menos';
-    t?.classList.toggle('is-open', !open);
+    b.textContent = open ? moreLabel : lessLabel;
+    text?.classList.toggle('is-open', !open);
     stop();
   }));
   window.addEventListener('resize', () => go(Math.min(idx, maxIdx())));

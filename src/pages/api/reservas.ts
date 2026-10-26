@@ -9,15 +9,15 @@ import { signCancelToken } from '../../lib/token';
 import { customerConfirmation, ownerNotification, sendEmail } from '../../lib/email';
 import { formatDateEs } from '../../lib/time';
 
-const fail = (error: string, status: number, extra: Record<string, unknown> = {}, field?: string) =>
-  json({ ok: false, error, field, message: bookingErrorMessage(error, extra as { max?: number; remaining?: number }) }, status);
-
 export const POST: APIRoute = async (ctx) => {
   const { request } = ctx;
   const raw = await readBody(request);
+  const lang = raw.lang === 'en' ? 'en' : 'es';
+  const fail = (error: string, status: number, extra: Record<string, unknown> = {}, field?: string) =>
+    json({ ok: false, error, field, message: bookingErrorMessage(error, extra as { max?: number; remaining?: number }, lang) }, status);
 
   // Honeypot: respondemos como si todo hubiera ido bien, pero no se guarda nada.
-  if (isSpam(raw)) return json({ ok: true, reference: null, summary: 'Hemos recibido tu solicitud.' });
+  if (isSpam(raw)) return json({ ok: true, reference: null, summary: lang === 'en' ? 'We have received your request.' : 'Hemos recibido tu solicitud.' });
 
   if (!env.supabaseServiceRoleKey || !env.bookingTokenSecret) return fail('not_configured', 503);
   const db = serviceClient();

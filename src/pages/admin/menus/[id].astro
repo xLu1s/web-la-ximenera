@@ -4,6 +4,8 @@ import Admin from '../../../layouts/Admin.astro';
 import { menuImageUrl, specialStatus, type Course, type SpecialMenuRow } from '../../../lib/content';
 import { dbErrorMessage, faction, fbool, fint, fnull, fstr, redirectWith } from '../../../lib/admin';
 import { validateSpecialMenu } from '../../../lib/validate';
+import { adminLang, ta } from '../../../i18n/admin';
+const lang = adminLang(Astro.locals.adminLang);
 import { todayMadrid } from '../../../lib/time';
 
 const sb = Astro.locals.supabase;
@@ -20,14 +22,14 @@ if (Astro.request.method === 'POST') {
     const { error, count } = await sb.from('special_menus').delete({ count: 'exact' }).eq('id', id);
     if (error || !count) return redirectWith(self, dbErrorMessage(error), 'err');
     if (old?.image_path) await sb.storage.from('media').remove([old.image_path]);
-    return redirectWith('/admin/menus', 'Menú eliminado.');
+    return redirectWith('/admin/menus', ta(lang, 'menu.deleted'));
   }
   if (action === 'remove_image' && id) {
     const { data: old } = await sb.from('special_menus').select('image_path').eq('id', id).single();
     const { error } = await sb.from('special_menus').update({ image_path: null }).eq('id', id);
     if (error) return redirectWith(self, dbErrorMessage(error), 'err');
     if (old?.image_path) await sb.storage.from('media').remove([old.image_path]);
-    return redirectWith(self, 'Imagen quitada.');
+    return redirectWith(self, ta(lang, 'menu.imageOff'));
   }
   const titles = fd.getAll('course_title').map(String);
   const itemsArr = fd.getAll('course_items').map(String);
@@ -44,7 +46,7 @@ if (Astro.request.method === 'POST') {
     ? await sb.from('special_menus').insert(row).select('id').single()
     : await sb.from('special_menus').update(row).eq('id', id!).select('id').single();
   if (error || !data) return redirectWith(self, dbErrorMessage(error), 'err');
-  return redirectWith(`/admin/menus/${data.id}`, `Menú «${v.value.title}» guardado.`);
+  return redirectWith(`/admin/menus/${data.id}`, ta(lang, 'menu.saved', { name: v.value.title }));
 }
 
 let menu: SpecialMenuRow | null = null;
@@ -62,53 +64,53 @@ const m = menu ?? { kind: 'especial', title: '', subtitle: '', description: '', 
 const courses: Course[] = m.courses.length ? m.courses : [{ title: 'Entrantes', items: [] }, { title: 'Principal', items: [] }, { title: 'Postre', items: [] }];
 const st = menu ? specialStatus(menu, todayMadrid()) : null;
 ---
-<Admin title={isNew ? 'Nuevo menú especial' : `Editar: ${m.title}`} section="menus">
+<Admin title={isNew ? ta(lang, 'menu.newTitle') : ta(lang, 'menu.edit', { name: m.title })} section="menus">
   <p><a href="/admin/menus">← Todos los menús</a> {st && <span class="badge" data-status={st}>Estado: {st}</span>}</p>
   <form method="post" class="card" data-menu-form>
     <input type="hidden" name="action" value="save" />
     <input type="hidden" name="image_path" value="" data-image-path />
     <div class="grid">
-      <label class="f">Tipo <select name="kind"><option value="especial" selected={m.kind === 'especial'}>Menú especial (sección destacada)</option><option value="del_dia" selected={m.kind === 'del_dia'}>Menú del día (en la carta)</option></select></label>
-      <label class="f">Título <input name="title" value={m.title} required maxlength="160" placeholder="Menú de Navidad" /></label>
-      <label class="f">Subtítulo <input name="subtitle" value={m.subtitle ?? ''} maxlength="160" placeholder="Moros i Cristians" /></label>
-      <label class="f">Precio <input name="price" value={m.price ?? ''} maxlength="60" placeholder="45 € por persona" /></label>
-      <label class="f">Nota del precio <input name="price_note" value={m.price_note ?? ''} maxlength="160" placeholder="Bebidas no incluidas" /></label>
-      <label class="f">Orden (1 = sale primero) <input type="number" name="sort_order" min="1" value={m.sort_order || ''} placeholder="Al final" /></label>
-      <label class="f">Visible desde <input type="date" name="starts_on" value={m.starts_on ?? ''} /></label>
-      <label class="f">Visible hasta (incluido) <input type="date" name="ends_on" value={m.ends_on ?? ''} /></label>
-      <label class="f--check"><input type="checkbox" name="visible" checked={m.visible} /> Visible</label>
-      <label class="f f--wide">Descripción <textarea name="description" maxlength="1500">{m.description ?? ''}</textarea></label>
+      <label class="f">{ta(lang, 'menu.kind')} <select name="kind"><option value="especial" selected={m.kind === 'especial'}>{ta(lang, 'menu.kindSpecial')}</option><option value="del_dia" selected={m.kind === 'del_dia'}>{ta(lang, 'menu.kindDay')}</option></select></label>
+      <label class="f">{ta(lang, 'title')} <input name="title" value={m.title} required maxlength="160" placeholder="Menú de Navidad" /></label>
+      <label class="f">{ta(lang, 'subtitle')} <input name="subtitle" value={m.subtitle ?? ''} maxlength="160" placeholder="Moros i Cristians" /></label>
+      <label class="f">{ta(lang, 'price')} <input name="price" value={m.price ?? ''} maxlength="60" placeholder="45 € por persona" /></label>
+      <label class="f">{ta(lang, 'menu.priceNote')} <input name="price_note" value={m.price_note ?? ''} maxlength="160" placeholder="Bebidas no incluidas" /></label>
+      <label class="f">{ta(lang, 'order')} <input type="number" name="sort_order" min="1" value={m.sort_order || ''} placeholder="Al final" /></label>
+      <label class="f">{ta(lang, 'menu.from')} <input type="date" name="starts_on" value={m.starts_on ?? ''} /></label>
+      <label class="f">{ta(lang, 'menu.until')} <input type="date" name="ends_on" value={m.ends_on ?? ''} /></label>
+      <label class="f--check"><input type="checkbox" name="visible" checked={m.visible} /> {ta(lang, 'visible')}</label>
+      <label class="f f--wide">{ta(lang, 'desc')} <textarea name="description" maxlength="1500">{m.description ?? ''}</textarea></label>
     </div>
     <p class="help">Fechas en blanco = sin límite. La web lo muestra desde el día de inicio y lo oculta automáticamente al día siguiente del fin (hora de España).</p>
-    <h2>Platos</h2>
+    <h2>{ta(lang, 'menu.courses')}</h2>
     <div class="grid" data-courses>
       {courses.map((c) => (
         <div class="item" data-course>
-          <label class="f">Bloque <input name="course_title" value={c.title} maxlength="80" /></label>
-          <label class="f">Platos (uno por línea) <textarea name="course_items" rows="5">{c.items.join('\n')}</textarea></label>
+          <label class="f">{ta(lang, 'menu.block')} <input name="course_title" value={c.title} maxlength="80" /></label>
+          <label class="f">{ta(lang, 'menu.items')} <textarea name="course_items" rows="5">{c.items.join('\n')}</textarea></label>
         </div>
       ))}
     </div>
-    <div class="actions"><button type="button" class="btn btn--light btn--small" data-add-course>+ Añadir bloque</button></div>
+    <div class="actions"><button type="button" class="btn btn--light btn--small" data-add-course>{ta(lang, 'menu.addBlock')}</button></div>
     <div class="actions" style="margin-top:1.2rem">
-      <button class="btn" type="submit">Guardar menú</button>
-      {!isNew && <button class="btn btn--danger" type="submit" name="action" value="delete" data-confirm="¿Borrar este menú?">Borrar menú</button>}
+      <button class="btn" type="submit">{ta(lang, 'menu.save')}</button>
+      {!isNew && <button class="btn btn--danger" type="submit" name="action" value="delete" data-confirm={ta(lang, 'menu.confirm')}>{ta(lang, 'menu.delete')}</button>}
     </div>
   </form>
 
   {!isNew && (
     <section class="card">
-      <h2 style="margin-top:0">Imagen (opcional)</h2>
+      <h2 style="margin-top:0">{ta(lang, 'menu.image')}</h2>
       {m.image_path && (
         <form method="post">
           <img src={menuImageUrl(m.image_path)} alt="" style="max-width:320px;border-radius:6px" />
           <input type="hidden" name="action" value="remove_image" />
-          <div class="actions"><button class="btn btn--light btn--small" type="submit">Quitar imagen</button></div>
+          <div class="actions"><button class="btn btn--light btn--small" type="submit">{ta(lang, 'menu.removeImage')}</button></div>
         </form>
       )}
       <div data-uploader data-purpose="menu" data-menu-id={id} data-accept="image/jpeg,image/png,image/webp,image/avif">
-        <label class="f">Elegir foto (JPG, PNG, WebP o AVIF, máx. 10 MB) <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" data-file /></label>
-        <div class="actions"><button type="button" class="btn btn--small" data-upload>Subir imagen</button></div>
+        <label class="f">{ta(lang, 'menu.pick')} <input type="file" accept="image/jpeg,image/png,image/webp,image/avif" data-file /></label>
+        <div class="actions"><button type="button" class="btn btn--small" data-upload>{ta(lang, 'menu.upload')}</button></div>
         <p class="upload-status" data-status aria-live="polite"></p>
       </div>
     </section>

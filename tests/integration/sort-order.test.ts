@@ -14,7 +14,7 @@ afterAll(async () => { await resetData(); await pool.end(); });
 describe('orden 1..N', () => {
   it('el contenido inicial está numerado 1, 2, 3… en cada lista', async () => {
     const cats = await q<{ sort_order: number }>('select sort_order from public.menu_categories order by sort_order');
-    expect(cats.map((r) => r.sort_order)).toEqual(seq(5));
+    expect(cats.map((r) => r.sort_order)).toEqual(seq(4));
     const items = await q<{ category_id: number; orders: number[] }>(
       'select category_id, array_agg(sort_order order by sort_order) as orders from public.menu_items group by 1');
     for (const r of items) expect(r.orders).toEqual(seq(r.orders.length));
@@ -39,7 +39,7 @@ describe('orden 1..N', () => {
 
   it('lo nuevo sin orden (o con 0) va al final de SU lista; un número explícito se respeta', async () => {
     const [{ id: cat, n }] = await q<{ id: number; n: number }>(
-      `select c.id, count(i.id)::int as n from public.menu_categories c join public.menu_items i on i.category_id = c.id where c.slug = 'brasas' group by c.id`);
+      `select c.id, count(i.id)::int as n from public.menu_categories c join public.menu_items i on i.category_id = c.id where c.slug = 'principal' group by c.id`);
     const [a] = await q<{ sort_order: number }>(`insert into public.menu_items (category_id, name) values ($1, 'Auto 1') returning sort_order`, [cat]);
     expect(a.sort_order).toBe(n + 1);
     const [b] = await q<{ sort_order: number }>(`insert into public.menu_items (category_id, name, sort_order) values ($1, 'Auto 2', 0) returning sort_order`, [cat]);
@@ -50,15 +50,17 @@ describe('orden 1..N', () => {
     const [d] = await q<{ sort_order: number }>(`update public.menu_items set sort_order = 0 where name = 'Auto 1' returning sort_order`);
     expect(d.sort_order).toBe(n + 1);
     // vinos: por tipo
+    const beforeW = await q<{ wine_type: string; n: number }>(`select wine_type, coalesce(max(sort_order), 0)::int as n from public.wines group by wine_type`);
+    const maxOf = (type: string) => beforeW.find((r) => r.wine_type === type)?.n ?? 0;
     const w = await q<{ sort_order: number }>(`insert into public.wines (name, wine_type) values ('T1', 'tinto'), ('T2', 'tinto'), ('B1', 'blanco') returning sort_order`);
-    expect(w.map((r) => r.sort_order)).toEqual([1, 2, 1]);
+    expect(w.map((r) => r.sort_order)).toEqual([maxOf('tinto') + 1, maxOf('tinto') + 2, maxOf('blanco') + 1]);
     // menús especiales: por tipo (el del día no cuenta)
     const [s] = await q<{ sort_order: number }>(`insert into public.special_menus (kind, title) values ('especial', 'X') returning sort_order`);
     expect(s.sort_order).toBe(1);
     const [g] = await q<{ sort_order: number }>(`insert into public.gallery_items (media_type, static_path, caption) values ('image', '/galeria/x.webp', 'x') returning sort_order`);
     expect(g.sort_order).toBe(13);
     const [cc] = await q<{ sort_order: number }>(`insert into public.menu_categories (slug, tab, title) values ('nueva', 'Nueva', 'Nueva') returning sort_order`);
-    expect(cc.sort_order).toBe(6);
+    expect(cc.sort_order).toBe(5);
   });
 
   it('la renumeración no la puede lanzar el público', async () => {

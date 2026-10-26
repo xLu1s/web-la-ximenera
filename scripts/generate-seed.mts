@@ -1,9 +1,10 @@
 /**
  * Genera supabase/migrations/20261023000400_seed_content.sql a partir de los datos actuales
- * de la web (src/data/*.ts), SIN modificarlos, y copia las fotos de la galería a public/galeria/
- * (WebP, máx. 760 px de ancho) para que la galería inicial funcione sin subir nada a Storage.
+ * de la web (src/data/*.ts) y copia las fotos de la galería a public/galeria/.
  *
- * Uso: node scripts/generate-seed.mts
+ * El fichero histórico está congelado: la carta física de 2026 vive en
+ * supabase/migrations/20261026120000_carta_vinos.sql (npm no lo regenera aquí).
+ * Para reescribir el seed antiguo: FORCE_SEED=1 node scripts/generate-seed.mts
  */
 import { writeFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -11,6 +12,11 @@ import { menu } from '../src/data/menu.ts';
 import { menuDelDia } from '../src/data/menuDelDia.ts';
 import { hours } from '../src/data/site.ts';
 import { instagramMeta } from '../src/data/gallery.ts';
+
+if (process.env.FORCE_SEED !== '1') {
+  console.log('Seed histórico congelado (20261023000400). Carta física: supabase/migrations/20261026120000_carta_vinos.sql. FORCE_SEED=1 para regenerar el seed antiguo.');
+  process.exit(0);
+}
 
 const require = createRequire(import.meta.url);
 const sharp = require('sharp');

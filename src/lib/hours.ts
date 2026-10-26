@@ -9,6 +9,9 @@ export interface ServiceStatus {
 
 export const DAY_NAMES = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const DAY_PLURAL = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados', 'domingos'];
+const DAY_EN = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const DAY_EN_PLURAL = ['Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays', 'Sundays'];
+export type HoursLang = 'es' | 'en';
 const EN = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 export const SERVICE_LABEL: Record<Service, string> = { comida: 'Comida', cena: 'Cena' };
 
@@ -27,14 +30,17 @@ const byDay = (rows: OpeningHour[], d: number) =>
   rows.filter((r) => r.weekday === d).sort((a, b) => toMinutes(a.opens) - toMinutes(b.opens));
 
 /** Tabla de horario con el mismo formato que la web original ("13:30–16:00 · 20:30–23:00"). */
-export function hoursTable(rows: OpeningHour[]): { day: string; value: string }[] {
-  return DAY_NAMES.map((day, i) => {
+export function hoursTable(rows: OpeningHour[], lang: HoursLang = 'es'): { day: string; value: string }[] {
+  const names = lang === 'en' ? DAY_EN : DAY_NAMES;
+  const closed = lang === 'en' ? 'Closed' : 'Cerrado';
+  return names.map((day, i) => {
     const r = byDay(rows, i + 1);
-    return { day, value: r.length ? r.map((x) => `${displayTime(x.opens)}–${displayTime(x.closes)}`).join(' · ') : 'Cerrado' };
+    return { day, value: r.length ? r.map((x) => `${displayTime(x.opens)}–${displayTime(x.closes)}`).join(' · ') : closed };
   });
 }
 
 const joinEs = (a: string[]) => (a.length <= 1 ? a.join('') : `${a.slice(0, -1).join(', ')} y ${a[a.length - 1]}`);
+const joinEn = (a: string[]) => (a.length <= 1 ? a.join('') : a.length === 2 ? `${a[0]} and ${a[1]}` : `${a.slice(0, -1).join(', ')} and ${a[a.length - 1]}`);
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /** Días cerrados en plural ("lunes"). */
@@ -43,8 +49,17 @@ export function closedDays(rows: OpeningHour[]): string[] {
 }
 
 /** "Cerramos los lunes. Domingos, solo mediodía." (texto original, generado desde el horario). */
-export function hoursSummary(rows: OpeningHour[]): string[] {
+export function hoursSummary(rows: OpeningHour[], lang: HoursLang = 'es'): string[] {
   const out: string[] = [];
+  if (lang === 'en') {
+    const closed = DAY_EN_PLURAL.filter((_, i) => byDay(rows, i + 1).length === 0);
+    if (closed.length) out.push(`Closed on ${joinEn(closed)}.`);
+    const lunchOnly = DAY_EN_PLURAL.filter((_, i) => { const r = byDay(rows, i + 1); return r.length > 0 && r.every((x) => x.service === 'comida'); });
+    if (lunchOnly.length) out.push(`${cap(joinEn(lunchOnly))}, lunch service only.`);
+    const dinnerOnly = DAY_EN_PLURAL.filter((_, i) => { const r = byDay(rows, i + 1); return r.length > 0 && r.every((x) => x.service === 'cena'); });
+    if (dinnerOnly.length) out.push(`${cap(joinEn(dinnerOnly))}, dinner service only.`);
+    return out;
+  }
   const closed = closedDays(rows);
   if (closed.length) out.push(`Cerramos los ${joinEs(closed)}.`);
   const lunchOnly = DAY_PLURAL.filter((_, i) => { const r = byDay(rows, i + 1); return r.length > 0 && r.every((x) => x.service === 'comida'); });
@@ -55,7 +70,11 @@ export function hoursSummary(rows: OpeningHour[]): string[] {
 }
 
 /** "Cerrado los lunes" para la nota del hero (vacío si abre todos los días). */
-export function closedNote(rows: OpeningHour[]): string {
+export function closedNote(rows: OpeningHour[], lang: HoursLang = 'es'): string {
+  if (lang === 'en') {
+    const c = DAY_EN_PLURAL.filter((_, i) => byDay(rows, i + 1).length === 0);
+    return c.length ? `Closed on ${joinEn(c)}` : '';
+  }
   const c = closedDays(rows);
   return c.length ? `Cerrado los ${joinEs(c)}` : '';
 }

@@ -3,6 +3,8 @@ export const prerender = false;
 import Admin from '../../layouts/Admin.astro';
 import { galleryUrl, type GalleryRow } from '../../lib/content';
 import { dbErrorMessage, faction, fbool, fid, fint, fstr, redirectWith } from '../../lib/admin';
+import { adminLang, ta } from '../../i18n/admin';
+const lang = adminLang(Astro.locals.adminLang);
 
 const sb = Astro.locals.supabase;
 if (Astro.request.method === 'POST') {
@@ -14,7 +16,7 @@ if (Astro.request.method === 'POST') {
     const { error, count } = await sb.from('gallery_items').delete({ count: 'exact' }).eq('id', id);
     if (error || !count) return redirectWith('/admin/galeria', dbErrorMessage(error), 'err');
     if (row?.storage_path) await sb.storage.from('media').remove([row.storage_path]);
-    return redirectWith('/admin/galeria', 'Elemento eliminado de la galería.');
+    return redirectWith('/admin/galeria', ta(lang, 'gal.deleted'));
   }
   if (action === 'save' && id) {
     const caption = fstr(fd, 'caption').slice(0, 300);
@@ -22,40 +24,40 @@ if (Astro.request.method === 'POST') {
       caption, sort_order: fint(fd, 'sort_order'), visible: fbool(fd, 'visible'),
     }).eq('id', id);
     if (error) return redirectWith('/admin/galeria', dbErrorMessage(error), 'err');
-    return redirectWith('/admin/galeria', 'Cambios guardados.');
+    return redirectWith('/admin/galeria', ta(lang, 'gal.saved'));
   }
-  return redirectWith('/admin/galeria', 'Acción desconocida.', 'err');
+  return redirectWith('/admin/galeria', ta(lang, 'unknown'), 'err');
 }
 const { data } = await sb.from('gallery_items').select('*').order('sort_order').order('id');
 const items = (data ?? []) as GalleryRow[];
 ---
-<Admin title="Galería" section="galeria">
+<Admin title={ta(lang, 'gal.title')} section="galeria">
   <section class="card card--muted">
-    <h2 style="margin-top:0">Subir foto o vídeo</h2>
-    <div data-uploader data-purpose="gallery">
+    <h2 style="margin-top:0">{ta(lang, 'gal.upload')}</h2>
+    <div data-uploader data-purpose="gallery" data-msg-choose={ta(lang, 'up.choose')} data-msg-format={ta(lang, 'up.formatGallery')} data-msg-video={ta(lang, 'up.videoSize')} data-msg-photo={ta(lang, 'up.photoSize')} data-msg-busy={ta(lang, 'up.busy')} data-msg-reject={ta(lang, 'up.reject')} data-msg-ok={ta(lang, 'up.ok')} data-msg-offline={ta(lang, 'up.offline')}>
       <div class="grid">
-        <label class="f f--wide">Archivo (fotos JPG/PNG/WebP/AVIF hasta 10 MB · vídeos MP4/WebM hasta 50 MB)
+        <label class="f f--wide">{ta(lang, 'gal.file')}
           <input type="file" accept="image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm" data-file /></label>
-        <label class="f">Descripción (para personas con discapacidad visual y buscadores) <input name="caption" maxlength="300" data-extra placeholder="Pulpo a la brasa" /></label>
+        <label class="f">{ta(lang, 'gal.caption')} <input name="caption" maxlength="300" data-extra placeholder="Pulpo a la brasa" /></label>
       </div>
-      <div class="actions"><button type="button" class="btn" data-upload>Subir</button></div>
+      <div class="actions"><button type="button" class="btn" data-upload>{ta(lang, 'gal.uploadBtn')}</button></div>
       <p class="upload-status" data-status aria-live="polite"></p>
     </div>
   </section>
-  <p class="help">{items.filter((i) => i.visible).length} de {items.length} elementos visibles. El «orden» decide la posición en el carrusel (menor = antes).</p>
+  <p class="help">{ta(lang, 'gal.help', { vis: items.filter((i) => i.visible).length, n: items.length })}</p>
   <div class="media-grid">
     {items.map((it) => (
       <form method="post" class:list={['item', { 'item--hidden': !it.visible }]} data-gallery-admin={it.caption}>
         <input type="hidden" name="action" value="save" /><input type="hidden" name="id" value={it.id} />
         {it.media_type === 'video' ? <video src={galleryUrl(it)} controls muted preload="metadata"></video> : <img src={galleryUrl(it)} alt={it.caption} loading="lazy" />}
-        <label class="f">Descripción <input name="caption" value={it.caption} maxlength="300" /></label>
+        <label class="f">{ta(lang, 'desc')} <input name="caption" value={it.caption} maxlength="300" /></label>
         <div class="row">
-          <label class="f f--order">Orden (1 = sale primero) <input type="number" name="sort_order" min="1" value={it.sort_order} /></label>
-          <label class="f--check"><input type="checkbox" name="visible" checked={it.visible} /> Visible</label>
+          <label class="f f--order">{ta(lang, 'order')} <input type="number" name="sort_order" min="1" value={it.sort_order} /></label>
+          <label class="f--check"><input type="checkbox" name="visible" checked={it.visible} /> {ta(lang, 'visible')}</label>
         </div>
         <div class="actions">
-          <button class="btn btn--small" type="submit">Guardar</button>
-          <button class="btn btn--danger btn--small" type="submit" name="action" value="delete" data-confirm="¿Borrar este elemento de la galería?">Borrar</button>
+          <button class="btn btn--small" type="submit">{ta(lang, 'save')}</button>
+          <button class="btn btn--danger btn--small" type="submit" name="action" value="delete" data-confirm={ta(lang, 'gal.confirm')}>{ta(lang, 'delete')}</button>
         </div>
       </form>
     ))}

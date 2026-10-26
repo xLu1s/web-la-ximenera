@@ -1,11 +1,14 @@
 ---
 import { Picture } from 'astro:assets';
 import { site } from '../data/site';
+import { publicLang, t } from '../i18n/public';
 // Foto oficial del Instagram @laximenera_restaurante, post https://www.instagram.com/p/Da-16HSCJVO/ (19/07/2026):
 // comedor del nuevo local (vigas de madera, pared de piedra, bodega acristalada). Versión retocada sin la camarera, 1440×1440.
 import heroImg from '../assets/hero/comedor-rooftop.jpg';
 interface Props { closedNote?: string }
-const { closedNote = 'Cerrado los lunes' } = Astro.props;
+const lang = publicLang(Astro.locals.lang);
+const { closedNote = '' } = Astro.props;
+const cuisine = site.cuisine === 'Brasería mediterránea y cocina de producto' ? t(lang, 'hero.cuisine') : site.cuisine;
 ---
 <section id="inicio" class="hero" aria-labelledby="hero-title">
   <div class="hero__media" data-parallax>
@@ -14,7 +17,7 @@ const { closedNote = 'Cerrado los lunes' } = Astro.props;
       formats={['avif', 'webp']}
       widths={[480, 768, 1080, 1440]}
       sizes="100vw"
-      alt="Comedor de La Ximenera Rooftop: vigas de madera, pared de piedra y bodega acristalada al fondo"
+      alt={t(lang, 'hero.alt')}
       loading="eager"
       fetchpriority="high"
       class="hero__img"
@@ -22,17 +25,17 @@ const { closedNote = 'Cerrado los lunes' } = Astro.props;
   </div>
   <div class="hero__overlay" aria-hidden="true"></div>
   <div class="container hero__content">
-    <p class="eyebrow hero__anim" style="--d:.1s">Rooftop · Restaurante en Alcoi · Alcoy</p>
+    <p class="eyebrow hero__anim" style="--d:.1s">{t(lang, 'hero.eyebrow')}</p>
     <h1 id="hero-title" class="hero__anim" style="--d:.25s">La <em>Ximenera</em></h1>
-    <p class="hero__lead hero__anim" style="--d:.45s">Un nuevo espacio singular con encanto. {site.cuisine}, en un rooftop en Alcoi.</p>
+    <p class="hero__lead hero__anim" style="--d:.45s">{t(lang, 'hero.lead', { cuisine })}</p>
     <div class="hero__ctas hero__anim" style="--d:.65s">
       <a class="btn btn--gold" href="#reservar">
         <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 16H5V9h14v11z"/></svg>
-        Reservar mesa
+        {t(lang, 'hero.book')}
       </a>
-      <a class="btn btn--ghost" href={site.mapsLink} target="_blank" rel="noopener">Cómo llegar</a>
+      <a class="btn btn--ghost" href={site.mapsLink} target="_blank" rel="noopener">{t(lang, 'hero.directions')}</a>
     </div>
-    <p class="hero__note hero__anim" style="--d:.85s">Reserva online en un minuto{closedNote && ` · ${closedNote}`}</p>
+    <p class="hero__note hero__anim" style="--d:.85s">{t(lang, 'hero.note')}{closedNote && ` · ${closedNote}`}</p>
   </div>
-  <a href="#nosotros" class="hero__scroll" aria-label="Bajar a la siguiente sección"><span></span></a>
+  <a href="#nosotros" class="hero__scroll" aria-label={t(lang, 'hero.scroll')}><span></span></a>
 </section>

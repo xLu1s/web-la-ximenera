@@ -3,6 +3,8 @@ export const prerender = false;
 import Admin from '../../layouts/Admin.astro';
 import { DAY_NAMES, type OpeningHour } from '../../lib/hours';
 import { dbErrorMessage, faction, fbool, fid, fint, fstr, redirectWith } from '../../lib/admin';
+import { adminLang, ta } from '../../i18n/admin';
+const lang = adminLang(Astro.locals.adminLang);
 import { validateDayHours } from '../../lib/validate';
 import { formatDateEs, todayMadrid } from '../../lib/time';
 
@@ -20,32 +22,32 @@ if (Astro.request.method === 'POST') {
         const h = v.value[s];
         const capRaw = fstr(fd, `${d}_${s}_capacity`);
         const cap = capRaw === '' ? null : Number(capRaw);
-        if (cap !== null && (!Number.isInteger(cap) || cap < 0 || cap > 1000)) return redirectWith('/admin/ajustes', `${DAY_NAMES[d - 1]}: aforo no válido.`, 'err');
+        if (cap !== null && (!Number.isInteger(cap) || cap < 0 || cap > 1000)) return redirectWith('/admin/ajustes', ta(lang, 'hours.badCap', { day: DAY_NAMES[d - 1] }), 'err');
         if (h) rows.push({ weekday: d, service: s, opens: h.opens, closes: h.closes, capacity: cap });
       }
     }
     // Sustituye el horario completo en una transacción (función SQL solo para admins).
     const { error } = await sb.rpc('admin_set_opening_hours', { p_rows: rows });
     if (error) return redirectWith('/admin/ajustes', dbErrorMessage(error), 'err');
-    return redirectWith('/admin/ajustes', 'Horario guardado. La web y las reservas ya usan el nuevo horario.');
+    return redirectWith('/admin/ajustes', ta(lang, 'hours.saved'));
   }
   if (action === 'settings') {
     const row = {
       default_capacity: fint(fd, 'default_capacity', 80), max_party_size: fint(fd, 'max_party_size', 12),
       slot_minutes: fint(fd, 'slot_minutes', 15), last_booking_before_close_minutes: fint(fd, 'last_booking_before_close_minutes', 60),
     };
-    if (row.default_capacity < 0 || row.default_capacity > 1000) return redirectWith('/admin/ajustes', 'El aforo debe estar entre 0 y 1000.', 'err');
-    if (row.max_party_size < 1 || row.max_party_size > 100) return redirectWith('/admin/ajustes', 'El máximo de personas por reserva debe estar entre 1 y 100.', 'err');
+    if (row.default_capacity < 0 || row.default_capacity > 1000) return redirectWith('/admin/ajustes', ta(lang, 'hours.capRange'), 'err');
+    if (row.max_party_size < 1 || row.max_party_size > 100) return redirectWith('/admin/ajustes', ta(lang, 'hours.maxRange'), 'err');
     const { error } = await sb.from('settings').update(row).eq('id', 1);
     if (error) return redirectWith('/admin/ajustes', dbErrorMessage(error), 'err');
-    return redirectWith('/admin/ajustes', 'Ajustes guardados.');
+    return redirectWith('/admin/ajustes', ta(lang, 'hours.setOk'));
   }
   if (action === 'unblock') {
     const { error } = await sb.from('service_exceptions').delete().eq('id', fid(fd)!);
     if (error) return redirectWith('/admin/ajustes', dbErrorMessage(error), 'err');
-    return redirectWith('/admin/ajustes', 'Excepción eliminada.');
+    return redirectWith('/admin/ajustes', ta(lang, 'res.exDel'));
   }
-  return redirectWith('/admin/ajustes', 'Acción desconocida.', 'err');
+  return redirectWith('/admin/ajustes', ta(lang, 'unknown'), 'err');
 }
 
 const [h, s, ex] = await Promise.all([
@@ -59,10 +61,10 @@ const get = (d: number, sv: string) => hours.find((x) => x.weekday === d && x.se
 const t = (x?: string) => (x ? (x.slice(0, 5) === '24:00' ? '00:00' : x.slice(0, 5)) : '');
 const defaults = { comida: ['13:30', '16:00'], cena: ['20:30', '23:00'] };
 ---
-<Admin title="Horarios y ajustes" section="ajustes">
+<Admin title={ta(lang, 'hours.title')} section="ajustes">
   <form method="post" class="card">
     <input type="hidden" name="action" value="hours" />
-    <h2 style="margin-top:0">Horario semanal</h2>
+    <h2 style="margin-top:0">{ta(lang, 'hours.weekly')}</h2>
     <p class="help">Marca qué servicios abre cada día. Un día sin servicios aparece como «Cerrado» en la web y no admite reservas. Para cerrar a medianoche escribe 00:00. Aforo en blanco = aforo general.</p>
     <table class="hours-table">
       <thead><tr><th>Día</th><th>Comida</th><th>Cena</th></tr></thead>
@@ -76,11 +78,11 @@ const defaults = { comida: ['13:30', '16:00'], cena: ['20:30', '23:00'] };
                 const r = get(d, sv);
                 return (
                   <td>
-                    <label class="f--check"><input type="checkbox" name={`${d}_${sv}_open`} checked={!!r} /> {sv === 'comida' ? 'Abre a mediodía' : 'Abre por la noche'}</label>
+                    <label class="f--check"><input type="checkbox" name={`${d}_${sv}_open`} checked={!!r} /> {sv === 'comida' ? ta(lang, 'hours.lunch') : ta(lang, 'hours.dinner')}</label>
                     <div class="row" style="margin-top:.3rem">
-                      <label class="f">Abre <input type="time" name={`${d}_${sv}_opens`} value={t(r?.opens) || defaults[sv][0]} step="300" /></label>
-                      <label class="f">Cierra <input type="time" name={`${d}_${sv}_closes`} value={t(r?.closes) || defaults[sv][1]} step="300" /></label>
-                      <label class="f" style="max-width:110px">Aforo <input type="number" name={`${d}_${sv}_capacity`} value={r?.capacity ?? ''} min="0" max="1000" placeholder={String(settings.default_capacity)} /></label>
+                      <label class="f">{ta(lang, 'hours.opens')} <input type="time" name={`${d}_${sv}_opens`} value={t(r?.opens) || defaults[sv][0]} step="300" /></label>
+                      <label class="f">{ta(lang, 'hours.closes')} <input type="time" name={`${d}_${sv}_closes`} value={t(r?.closes) || defaults[sv][1]} step="300" /></label>
+                      <label class="f" style="max-width:110px">{ta(lang, 'hours.cap')} <input type="number" name={`${d}_${sv}_capacity`} value={r?.capacity ?? ''} min="0" max="1000" placeholder={String(settings.default_capacity)} /></label>
                     </div>
                   </td>
                 );
@@ -90,31 +92,31 @@ const defaults = { comida: ['13:30', '16:00'], cena: ['20:30', '23:00'] };
         })}
       </tbody>
     </table>
-    <div class="actions"><button class="btn" type="submit">Guardar horario</button></div>
+    <div class="actions"><button class="btn" type="submit">{ta(lang, 'hours.save')}</button></div>
   </form>
 
   <form method="post" class="card">
     <input type="hidden" name="action" value="settings" />
-    <h2 style="margin-top:0">Reservas online</h2>
+    <h2 style="margin-top:0">{ta(lang, 'hours.online')}</h2>
     <div class="grid">
-      <label class="f">Aforo por servicio (personas) <input type="number" name="default_capacity" value={settings.default_capacity} min="0" max="1000" required /></label>
-      <label class="f">Máximo de personas por reserva <input type="number" name="max_party_size" value={settings.max_party_size} min="1" max="100" required /></label>
-      <label class="f">Intervalo entre horas (min) <select name="slot_minutes">{[10, 15, 20, 30, 60].map((n) => <option value={n} selected={settings.slot_minutes === n}>{n}</option>)}</select></label>
-      <label class="f">Última reserva: minutos antes del cierre <input type="number" name="last_booking_before_close_minutes" value={settings.last_booking_before_close_minutes} min="0" max="240" required /></label>
+      <label class="f">{ta(lang, 'hours.defCap')} <input type="number" name="default_capacity" value={settings.default_capacity} min="0" max="1000" required /></label>
+      <label class="f">{ta(lang, 'hours.max')} <input type="number" name="max_party_size" value={settings.max_party_size} min="1" max="100" required /></label>
+      <label class="f">{ta(lang, 'hours.slot')} <select name="slot_minutes">{[10, 15, 20, 30, 60].map((n) => <option value={n} selected={settings.slot_minutes === n}>{n}</option>)}</select></label>
+      <label class="f">{ta(lang, 'hours.last')} <input type="number" name="last_booking_before_close_minutes" value={settings.last_booking_before_close_minutes} min="0" max="240" required /></label>
     </div>
     <p class="help">Ejemplo: si la cena cierra a las 23:00 y pones 60, la última hora reservable es las 22:00.</p>
-    <div class="actions"><button class="btn" type="submit">Guardar ajustes</button></div>
+    <div class="actions"><button class="btn" type="submit">{ta(lang, 'hours.saveSet')}</button></div>
   </form>
 
   <section class="card">
-    <h2 style="margin-top:0">Próximos bloqueos y aforos especiales</h2>
+    <h2 style="margin-top:0">{ta(lang, 'hours.upcoming')}</h2>
     <p class="help">Se crean desde «Reservas» eligiendo el día.</p>
     {(ex.data ?? []).length === 0 ? <p class="help">No hay ninguno.</p> : (ex.data ?? []).map((e) => (
       <form method="post" class="row" style="align-items:center;margin-bottom:.4rem">
         <input type="hidden" name="action" value="unblock" /><input type="hidden" name="id" value={e.id} />
         <a href={`/admin/reservas?fecha=${e.day}`} style="text-transform:capitalize">{formatDateEs(e.day)}</a>
-        <span>· {e.service ? (e.service === 'comida' ? 'Comida' : 'Cena') : 'Todo el día'}: {e.closed ? 'bloqueado' : `aforo ${e.capacity}`}{e.note ? ` (${e.note})` : ''}</span>
-        <button class="btn btn--light btn--small" type="submit">Quitar</button>
+        <span>· {e.service ? (e.service === 'comida' ? ta(lang, 'svc.comida') : ta(lang, 'svc.cena')) : ta(lang, 'res.allDay')}: {e.closed ? ta(lang, 'res.blocked') : ta(lang, 'res.capN', { n: e.capacity })}{e.note ? ` (${e.note})` : ''}</span>
+        <button class="btn btn--light btn--small" type="submit">{ta(lang, 'res.remove')}</button>
       </form>
     ))}
   </section>

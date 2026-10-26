@@ -1,6 +1,8 @@
 ---
 export const prerender = false;
 import Admin from '../../layouts/Admin.astro';
+import { adminLang, ta } from '../../i18n/admin';
+const lang = adminLang(Astro.locals.adminLang);
 const nextRaw = Astro.url.searchParams.get('next') ?? '/admin/reservas';
 const next = nextRaw.startsWith('/admin') && !nextRaw.startsWith('//') ? nextRaw : '/admin/reservas';
 let error = '';
@@ -10,18 +12,18 @@ if (Astro.request.method === 'POST') {
   const password = String(fd.get('password') ?? '');
   const { error: e } = await Astro.locals.supabase.auth.signInWithPassword({ email, password });
   if (!e) return Astro.redirect(next, 303);
-  error = 'Email o contraseña incorrectos.';
+  error = ta(lang, 'badLogin');
   Astro.response.status = 401;
 } else if (Astro.locals.user) {
   return Astro.redirect(next, 303);
 }
 ---
-<Admin title="Entrar al panel" bare>
+<Admin title={ta(lang, 'login.title')} bare>
   {error && <p class="adm__flash adm__flash--err" role="alert">{error}</p>}
   <form method="post" class="card">
-    <label class="f">Email <input type="email" name="email" required autocomplete="username" /></label>
-    <label class="f" style="margin-top:.75rem">Contraseña <input type="password" name="password" required autocomplete="current-password" /></label>
-    <button class="btn" type="submit" style="width:100%;margin-top:1rem">Entrar</button>
+    <label class="f">{ta(lang, 'email')} <input type="email" name="email" required autocomplete="username" /></label>
+    <label class="f" style="margin-top:.75rem">{ta(lang, 'password')} <input type="password" name="password" required autocomplete="current-password" /></label>
+    <button class="btn" type="submit" style="width:100%;margin-top:1rem">{ta(lang, 'enter')}</button>
   </form>
-  <p class="help"><a href="/admin/recuperar">¿Has olvidado la contraseña?</a></p>
+  <p class="help"><a href="/admin/recuperar">{ta(lang, 'forgot')}</a></p>
 </Admin>

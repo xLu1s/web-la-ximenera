@@ -23,9 +23,11 @@ export async function resetData() {
   try {
     await c.query('begin');
     await c.query(`truncate public.bookings, public.service_exceptions, public.rate_limits, public.menu_items, public.menu_categories,
-      public.wines, public.special_menus, public.gallery_items, public.opening_hours restart identity cascade`);
+      public.wines, public.denominaciones, public.special_menus, public.gallery_items, public.opening_hours restart identity cascade`);
     await c.query(`update public.settings set default_capacity = 80, max_party_size = 12, slot_minutes = 15, last_booking_before_close_minutes = 60 where id = 1`);
     await c.query(seed);
+    const carta = readFileSync(new URL('../../supabase/seeds/carta_2026.sql', import.meta.url), 'utf8');
+    await c.query(carta);
     await c.query('commit');
   } catch (e) {
     await c.query('rollback');

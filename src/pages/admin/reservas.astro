@@ -2,8 +2,11 @@
 export const prerender = false;
 import Admin from '../../layouts/Admin.astro';
 import { addDays, formatDateEs, isValidDate, todayMadrid } from '../../lib/time';
-import { SERVICE_LABEL, type ServiceStatus } from '../../lib/hours';
+import { type ServiceStatus } from '../../lib/hours';
 import { dbErrorMessage, faction, fid, fint, fstr, redirectWith } from '../../lib/admin';
+import { adminLang, ta } from '../../i18n/admin';
+const lang = adminLang(Astro.locals.adminLang);
+const svcName = (s: string | null | undefined) => s === 'comida' ? ta(lang, 'svc.comida') : s === 'cena' ? ta(lang, 'svc.cena') : ta(lang, 'res.allDay');
 import { customerCancellation, ownerCancellation, sendEmail } from '../../lib/email';
 
 const sb = Astro.locals.supabase;
@@ -18,11 +21,11 @@ if (Astro.request.method === 'POST') {
     const id = fstr(fd, 'booking_id');
     const { data, error } = await sb.rpc('admin_cancel_booking', { p_id: id });
     if (error) return redirectWith(here, dbErrorMessage(error), 'err');
-    if (!data.ok) return redirectWith(here, data.error === 'already_cancelled' ? 'La reserva ya estaba cancelada.' : 'No se encontró la reserva.', 'err');
+    if (!data.ok) return redirectWith(here, data.error === 'already_cancelled' ? ta(lang, 'res.already') : ta(lang, 'res.missing'), 'err');
     const s = { reference: data.reference, day: data.day, time: data.time, service: data.service, party_size: data.party_size, name: data.name, email: data.email };
     if (fstr(fd, 'notify') === 'on') await sendEmail(customerCancellation(s));
     await sendEmail(ownerCancellation(s, 'restaurante'));
-    return redirectWith(here, `Reserva ${data.reference} cancelada.`);
+    return redirectWith(here, ta(lang, 'res.cancelledOk', { ref: data.reference }));
   }
   if (action === 'block' || action === 'capacity') {
     const service = fstr(fd, 'service') || null;
@@ -31,19 +34,19 @@ if (Astro.request.method === 'POST') {
     const row = action === 'block'
       ? { day: targetDay, service, closed: true, capacity: null, note }
       : { day: targetDay, service, closed: false, capacity: Math.max(0, fint(fd, 'capacity', 0)), note };
-    if (action === 'capacity' && (fstr(fd, 'capacity') === '' || row.capacity! > 1000)) return redirectWith(here, 'Escribe un aforo entre 0 y 1000.', 'err');
+    if (action === 'capacity' && (fstr(fd, 'capacity') === '' || row.capacity! > 1000)) return redirectWith(here, ta(lang, 'res.badCap'), 'err');
     const { error } = await sb.from('service_exceptions').upsert(row, { onConflict: 'day,service_key' });
     if (error) return redirectWith(here, dbErrorMessage(error), 'err');
-    const what = service ? SERVICE_LABEL[service as 'comida'] : 'Todo el día';
-    return redirectWith(`/admin/reservas?fecha=${targetDay}`, action === 'block' ? `${what} bloqueado el ${formatDateEs(targetDay)}.` : `Aforo de ${what.toLowerCase()} ajustado a ${row.capacity} personas.`);
+    const what = svcName(service);
+    return redirectWith(`/admin/reservas?fecha=${targetDay}`, action === 'block' ? ta(lang, 'res.blockedOk', { what, day: formatDateEs(targetDay) }) : ta(lang, 'res.capOk', { what: lang === 'es' ? what.toLowerCase() : what, n: row.capacity ?? 0 }));
   }
   if (action === 'unblock') {
     const id = fid(fd);
     const { error } = await sb.from('service_exceptions').delete().eq('id', id!);
     if (error) return redirectWith(here, dbErrorMessage(error), 'err');
-    return redirectWith(here, 'Excepción eliminada.');
+    return redirectWith(here, ta(lang, 'res.exDel'));
   }
-  return redirectWith(here, 'Acción desconocida.', 'err');
+  return redirectWith(here, ta(lang, 'unknown'), 'err');
 }
 
 const [statusRes, bookingsRes, exRes] = await Promise.all([
@@ -56,13 +59,13 @@ const bookings = bookingsRes.data ?? [];
 const exceptions = exRes.data ?? [];
 const totalPeople = bookings.filter((b) => b.status === 'confirmada').reduce((n, b) => n + b.party_size, 0);
 ---
-<Admin title="Reservas" section="reservas">
+<Admin title={ta(lang, 'res.title')} section="reservas">
   <form class="card row" method="get">
     <a class="btn btn--light" href={`/admin/reservas?fecha=${addDays(day, -1)}`} aria-label="Día anterior">‹</a>
-    <label class="f f--grow">Día <input type="date" name="fecha" value={day} onchange="this.form.submit()" /></label>
+    <label class="f f--grow">{ta(lang, 'res.day')} <input type="date" name="fecha" value={day} onchange="this.form.submit()" /></label>
     <a class="btn btn--light" href={`/admin/reservas?fecha=${addDays(day, 1)}`} aria-label="Día siguiente">›</a>
     <a class="btn btn--light" href="/admin/reservas">Hoy</a>
-    <noscript><button class="btn" type="submit">Ver</button></noscript>
+    <noscript><button class="btn" type="submit">{ta(lang, 'res.see')}</button></noscript>
   </form>
   <p><strong>{(() => { const t = formatDateEs(day); return t.charAt(0).toUpperCase() + t.slice(1); })()}</strong> · {totalPeople} personas reservadas</p>
 
@@ -74,8 +77,8 @@ const totalPeople = bookings.filter((b) => b.status === 'confirmada').reduce((n,
     return (
       <section class="card" data-service={s.service}>
         <div class="row" style="justify-content:space-between;align-items:center">
-          <h2 style="margin:0">{SERVICE_LABEL[s.service]} <small class="help">{s.opens.slice(0, 5)}–{s.closes.slice(0, 5) === '24:00' ? '00:00' : s.closes.slice(0, 5)} · última reserva {s.last_booking.slice(0, 5)}</small></h2>
-          {s.is_closed ? <span class="badge badge--err">Bloqueado{s.closed_note ? `: ${s.closed_note}` : ''}</span>
+          <h2 style="margin:0">{svcName(s.service)} <small class="help">{s.opens.slice(0, 5)}–{s.closes.slice(0, 5) === '24:00' ? '00:00' : s.closes.slice(0, 5)} · última reserva {s.last_booking.slice(0, 5)}</small></h2>
+          {s.is_closed ? <span class="badge badge--err">{lang === 'zh' ? '已关闭' : lang === 'en' ? 'Blocked' : 'Bloqueado'}{s.closed_note ? `: ${s.closed_note}` : ''}</span>
             : s.booked >= s.capacity ? <span class="badge badge--err">Completo</span> : <span class="badge badge--ok">Abierto</span>}
         </div>
         <p style="margin:.6rem 0 0" data-occupancy>{s.booked} / {s.capacity} personas</p>
@@ -97,10 +100,10 @@ const totalPeople = bookings.filter((b) => b.status === 'confirmada').reduce((n,
                       <form method="post" data-confirm={`¿Cancelar la reserva ${b.reference} de ${b.name}?`}>
                         <input type="hidden" name="action" value="cancel" />
                         <input type="hidden" name="booking_id" value={b.id} />
-                        <label class="f--check" style="font-size:.8rem"><input type="checkbox" name="notify" checked /> avisar al cliente</label>
-                        <button class="btn btn--danger btn--small" type="submit">Cancelar</button>
+                        <label class="f--check" style="font-size:.8rem"><input type="checkbox" name="notify" checked /> {ta(lang, 'res.notify')}</label>
+                        <button class="btn btn--danger btn--small" type="submit">{ta(lang, 'res.cancel')}</button>
                       </form>
-                    ) : <span class="badge">Cancelada{b.cancelled_by ? ` (${b.cancelled_by})` : ''}</span>}
+                    ) : <span class="badge">{ta(lang, 'res.cancelled')}{b.cancelled_by ? ` (${b.cancelled_by})` : ''}</span>}
                   </td>
                 </tr>
               ))}
@@ -111,35 +114,35 @@ const totalPeople = bookings.filter((b) => b.status === 'confirmada').reduce((n,
     );
   })}
 
-  <h2>Bloquear o cambiar el aforo de este día</h2>
+  <h2>{ta(lang, 'res.blockTitle')}</h2>
   {exceptions.length > 0 && (
     <div class="card card--muted">
-      <h3>Excepciones del {formatDateEs(day)}</h3>
+      <h3>{ta(lang, 'res.exceptions', { day: formatDateEs(day) })}</h3>
       {exceptions.map((e) => (
         <form method="post" class="row" style="align-items:center;margin-bottom:.4rem">
           <input type="hidden" name="action" value="unblock" /><input type="hidden" name="id" value={e.id} />
-          <span>{e.service ? SERVICE_LABEL[e.service as 'comida'] : 'Todo el día'}: {e.closed ? 'bloqueado' : `aforo ${e.capacity} personas`}{e.note ? ` · ${e.note}` : ''}</span>
-          <button class="btn btn--light btn--small" type="submit">Quitar</button>
+          <span>{svcName(e.service)}: {e.closed ? ta(lang, 'res.blocked') : ta(lang, 'res.capN', { n: e.capacity })}{e.note ? ` · ${e.note}` : ''}</span>
+          <button class="btn btn--light btn--small" type="submit">{ta(lang, 'res.remove')}</button>
         </form>
       ))}
     </div>
   )}
   <div class="grid">
     <form method="post" class="card" data-form="block">
-      <h3>Bloquear reservas online</h3>
+      <h3>{ta(lang, 'res.blockH')}</h3>
       <input type="hidden" name="action" value="block" />
-      <label class="f">Día <input type="date" name="day" value={day} required /></label>
-      <label class="f">Servicio <select name="service"><option value="">Todo el día</option><option value="comida">Comida</option><option value="cena">Cena</option></select></label>
-      <label class="f">Motivo (interno, opcional) <input type="text" name="note" maxlength="200" placeholder="Evento privado, vacaciones…" /></label>
-      <div class="actions"><button class="btn" type="submit">Bloquear</button></div>
+      <label class="f">{ta(lang, 'res.day')} <input type="date" name="day" value={day} required /></label>
+      <label class="f">{ta(lang, 'res.service')} <select name="service"><option value="">{ta(lang, 'res.allDay')}</option><option value="comida">{ta(lang, 'svc.comida')}</option><option value="cena">{ta(lang, 'svc.cena')}</option></select></label>
+      <label class="f">{ta(lang, 'res.reason')} <input type="text" name="note" maxlength="200" placeholder="Evento privado, vacaciones…" /></label>
+      <div class="actions"><button class="btn" type="submit">{ta(lang, 'res.block')}</button></div>
     </form>
     <form method="post" class="card" data-form="capacity">
-      <h3>Ajustar aforo</h3>
+      <h3>{ta(lang, 'res.capH')}</h3>
       <input type="hidden" name="action" value="capacity" />
-      <label class="f">Día <input type="date" name="day" value={day} required /></label>
-      <label class="f">Servicio <select name="service"><option value="comida">Comida</option><option value="cena">Cena</option><option value="">Todo el día</option></select></label>
-      <label class="f">Plazas (personas) <input type="number" name="capacity" min="0" max="1000" required /></label>
-      <div class="actions"><button class="btn" type="submit">Guardar aforo</button></div>
+      <label class="f">{ta(lang, 'res.day')} <input type="date" name="day" value={day} required /></label>
+      <label class="f">{ta(lang, 'res.service')} <select name="service"><option value="comida">{ta(lang, 'svc.comida')}</option><option value="cena">{ta(lang, 'svc.cena')}</option><option value="">{ta(lang, 'res.allDay')}</option></select></label>
+      <label class="f">{ta(lang, 'res.seats')} <input type="number" name="capacity" min="0" max="1000" required /></label>
+      <div class="actions"><button class="btn" type="submit">{ta(lang, 'res.saveCap')}</button></div>
     </form>
   </div>
 </Admin>
