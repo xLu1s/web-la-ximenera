@@ -24,27 +24,45 @@ body.adm { margin: 0; font-family: system-ui, -apple-system, 'Segoe UI', Roboto,
 .adm__flash { padding: .8rem 1rem; border-radius: 8px; font-weight: 600; }
 .adm__flash--ok { background: #e3f4e9; color: var(--a-ok); }
 .adm__flash--err { background: #fde8e6; color: var(--a-err); }
-.card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 10px; padding: 1rem; margin-bottom: 1rem; }
+.card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 10px; padding: 1rem; margin-bottom: 1rem; min-width: 0; max-width: 100%; overflow-x: clip; }
 .card--muted { background: #faf7f1; }
+.card > summary { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .6rem; min-width: 0; cursor: pointer; }
+.card > summary strong { min-width: 0; overflow-wrap: anywhere; }
 .row { display: flex; flex-wrap: wrap; gap: .75rem; align-items: flex-end; min-width: 0; max-width: 100%; }
-.grid { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); min-width: 0; }
+.row > h2, .row > h3 { min-width: 0; flex: 1 1 12rem; overflow-wrap: anywhere; }
+.row > h2 small, .row > h3 small { overflow-wrap: anywhere; }
+.grid { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); min-width: 0; max-width: 100%; }
 .grid > *, .row > *, .item, .card, .f { min-width: 0; max-width: 100%; }
-.f { display: grid; gap: .25rem; font-size: .85rem; font-weight: 600; color: var(--a-muted); }
+/* Una sola columna en el móvil: dos tarjetas de 180px dejan el date de iOS fuera. */
+@media (max-width: 700px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+/* La columna por defecto (auto) crece con el mínimo intrínseco del date/select de iOS. */
+.f { display: grid; grid-template-columns: minmax(0, 1fr); gap: .25rem; font-size: .85rem; font-weight: 600; color: var(--a-muted); min-width: 0; max-width: 100%; overflow-x: clip; }
 .f--grow { flex: 1 1 12rem; }
 .f--order { flex: 1 1 9rem; }
 .f--wide { grid-column: 1 / -1; }
-.f--check { display: flex; align-items: center; gap: .45rem; font-size: .95rem; color: var(--a-ink); }
-.adm input:not([type='checkbox']), .adm select, .adm textarea { width: 100%; max-width: 100%; min-width: 0; min-height: 44px; padding: .55rem .7rem; font: inherit; font-size: 1rem; color: var(--a-ink); background: #fff; border: 1px solid #cdbfa8; border-radius: 6px; }
+.f--check { display: flex; align-items: center; gap: .45rem; font-size: .95rem; color: var(--a-ink); overflow-wrap: anywhere; }
+.adm input:not([type='checkbox']), .adm select, .adm textarea { display: block; box-sizing: border-box; width: 100%; max-width: 100%; min-width: 0; min-inline-size: 0; min-height: 44px; padding: .55rem .7rem; font: inherit; font-size: 1rem; color: var(--a-ink); background: #fff; border: 1px solid #cdbfa8; border-radius: 6px; }
 .adm select { text-overflow: ellipsis; }
-.adm input[type='file'] { min-height: 0; padding: .4rem 0; background: transparent; border: 0; }
-.adm input[type='date'], .adm input[type='time'], .adm select { display: block; overflow: hidden; }
+.adm input[type='file'] { min-height: 0; padding: .4rem 0; background: transparent; border: 0; overflow: hidden; }
+/* iOS Safari ignora width/min-width en date y time mientras conserva el aspecto nativo. */
+.adm select { display: block; box-sizing: border-box; width: 100% !important; max-width: 100% !important; min-width: 0 !important; min-inline-size: 0 !important; overflow: hidden; text-overflow: ellipsis; }
+.adm input[type='date'], .adm input[type='time'], .adm input[type='datetime-local'] {
+  display: block; box-sizing: border-box; width: 100% !important; max-width: 100% !important; min-width: 0 !important; min-inline-size: 0 !important;
+  -webkit-appearance: none; appearance: none; overflow: hidden; text-overflow: ellipsis;
+}
+.adm input[type='date']::-webkit-date-and-time-value,
+.adm input[type='time']::-webkit-date-and-time-value { min-width: 0; text-align: left; }
 .adm input[type='date']::-webkit-datetime-edit,
-.adm input[type='time']::-webkit-datetime-edit { min-width: 0; overflow: hidden; }
+.adm input[type='time']::-webkit-datetime-edit,
+.adm input[type='date']::-webkit-datetime-edit-fields-wrapper,
+.adm input[type='time']::-webkit-datetime-edit-fields-wrapper { display: inline-block; min-width: 0; max-width: 100%; overflow: hidden; padding: 0; }
 .adm input[type='checkbox'] { width: 20px; height: 20px; accent-color: var(--a-brand); }
 .adm textarea { min-height: 80px; resize: vertical; }
-.btn { display: inline-flex; align-items: center; justify-content: center; max-width: 100%; min-height: 44px; padding: .55rem 1rem; border-radius: 6px; border: 1px solid var(--a-brand); background: var(--a-brand); color: #fff; font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; text-align: center; overflow-wrap: anywhere; }
-.btn--light { background: #fff; color: var(--a-brand); }
-.btn--danger { background: #fff; color: var(--a-err); border-color: var(--a-err); }
+.btn { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; width: auto; max-width: 100%; min-width: 0; min-height: 44px; padding: .55rem 1rem; border-radius: 6px; border: 1px solid var(--a-brand); background: var(--a-brand); color: #fff; font: inherit; font-weight: 600; font-size: 1rem; line-height: 1.3; cursor: pointer; text-decoration: none; text-align: center; white-space: normal; overflow-wrap: anywhere; }
+/* .adm a (0,1,1) ganaba a .btn y dejaba el texto del mismo marrón que el fondo («+ Nuevo menú especial»). */
+.adm .btn, .adm a.btn { color: #fff; }
+.btn--light, .adm .btn--light, .adm a.btn--light { background: #fff; color: var(--a-brand); }
+.btn--danger, .adm .btn--danger, .adm a.btn--danger { background: #fff; color: var(--a-err); border-color: var(--a-err); }
 .btn--small { min-height: 36px; padding: .3rem .7rem; font-size: .9rem; }
 .badge { display: inline-block; padding: .1rem .55rem; border-radius: 999px; font-size: .78rem; font-weight: 700; background: #eee4d3; color: var(--a-muted); }
 .badge--ok { background: #e3f4e9; color: var(--a-ok); }
