@@ -6,15 +6,17 @@ type R<T> = { ok: true; value: T } | { ok: false; error: string };
 const ok = <T>(value: T): R<T> => ({ ok: true, value });
 const bad = (error: string): R<never> => ({ ok: false, error });
 
-export function validateMenuItem(i: { name: string; description?: string | null; price?: string | null; half_price?: string | null; allergens?: string[]; sort_order?: number; visible?: boolean }) {
+export function validateMenuItem(i: { name: string; description?: string | null; price?: string | null; half_price?: string | null; allergens?: string[]; sort_order?: number; visible?: boolean; recommended?: boolean; recommendation_note?: string | null }) {
   const name = (i.name ?? '').trim();
   if (!name) return bad('El plato necesita un nombre.');
   if (name.length > 200) return bad('El nombre del plato es demasiado largo (máx. 200).');
   if ((i.description ?? '').length > 600) return bad('La descripción es demasiado larga (máx. 600).');
   if ((i.price ?? '').length > 40 || (i.half_price ?? '').length > 40) return bad('El precio es demasiado largo (máx. 40 caracteres).');
+  const note = (i.recommendation_note ?? '').trim();
+  if (note.length > 200) return bad('La sugerencia es demasiado larga (máx. 200).');
   const allergens = [...new Set(i.allergens ?? [])];
   if (allergens.some((a) => !(a in ALLERGENS))) return bad('Alérgeno no válido.');
-  return ok({ name, description: i.description?.trim() || null, price: i.price?.trim() || null, half_price: i.half_price?.trim() || null, allergens: allergens as Allergen[], sort_order: i.sort_order ?? 0, visible: i.visible ?? true });
+  return ok({ name, description: i.description?.trim() || null, price: i.price?.trim() || null, half_price: i.half_price?.trim() || null, allergens: allergens as Allergen[], sort_order: i.sort_order ?? 0, visible: i.visible ?? true, recommended: i.recommended ?? false, recommendation_note: note || null });
 }
 
 export function slugify(s: string): string {
@@ -32,6 +34,7 @@ export function validateCategory(c: { tab: string; title: string; subtitle?: str
 }
 
 export const WINE_TYPE_KEYS = ['tinto', 'blanco', 'rosado', 'espumoso', 'generoso', 'dulce', 'otro'] as const;
+export const WINE_SECTION_KEYS = ['joven', 'crianza', 'galeria', 'blanco', 'cava', 'especial'] as const;
 
 /** Precio en euros: admite "18", "18,50", "18.50 €". Vacío = null. */
 export function parseEuro(s: string | null | undefined): number | null | undefined {
@@ -41,14 +44,22 @@ export function parseEuro(s: string | null | undefined): number | null | undefin
   return Number(v.replace(',', '.'));
 }
 
-export function validateWine(w: { name: string; wine_type: string; origin?: string | null; description?: string | null; price_bottle?: string | null; price_glass?: string | null; sort_order?: number; visible?: boolean }) {
+export function validateWine(w: { name: string; wine_type: string; origin?: string | null; description?: string | null; price_bottle?: string | null; price_glass?: string | null; sort_order?: number; visible?: boolean; section?: string | null; denominacion_origen?: string | null; recommended?: boolean; recommendation_note?: string | null }) {
   const name = (w.name ?? '').trim();
   if (!name) return bad('El vino necesita un nombre.');
   if (name.length > 160) return bad('El nombre es demasiado largo (máx. 160).');
   if (!(WINE_TYPE_KEYS as readonly string[]).includes(w.wine_type)) return bad('Elige un tipo de vino.');
+  const section = (w.section ?? '').trim();
+  if (section && !(WINE_SECTION_KEYS as readonly string[]).includes(section)) return bad('Elige una sección de la carta de vinos.');
+  const denominacion = (w.denominacion_origen ?? '').trim();
+  if (denominacion.length > 80) return bad('La denominación de origen es demasiado larga.');
+  const note = (w.recommendation_note ?? '').trim();
+  if (note.length > 200) return bad('La sugerencia es demasiado larga (máx. 200).');
+  if ((w.origin ?? '').length > 160) return bad('El origen es demasiado largo (máx. 160).');
+  if ((w.description ?? '').length > 400) return bad('La nota del vino es demasiado larga (máx. 400).');
   const pb = parseEuro(w.price_bottle), pg = parseEuro(w.price_glass);
   if (pb === undefined || pg === undefined) return bad('Precio no válido. Escribe por ejemplo 18,50.');
-  return ok({ name, wine_type: w.wine_type, origin: w.origin?.trim() || null, description: w.description?.trim() || null, price_bottle: pb, price_glass: pg, sort_order: w.sort_order ?? 0, visible: w.visible ?? true });
+  return ok({ name, wine_type: w.wine_type, origin: w.origin?.trim() || null, description: w.description?.trim() || null, price_bottle: pb, price_glass: pg, sort_order: w.sort_order ?? 0, visible: w.visible ?? true, section: section || null, denominacion_origen: denominacion || null, recommended: w.recommended ?? false, recommendation_note: note || null });
 }
 
 export function validateSpecialMenu(m: { kind: string; title: string; subtitle?: string | null; description?: string | null; price?: string | null; price_note?: string | null; starts_on?: string | null; ends_on?: string | null; courses: Course[]; visible?: boolean; sort_order?: number }) {

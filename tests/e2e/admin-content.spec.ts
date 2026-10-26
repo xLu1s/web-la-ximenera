@@ -9,11 +9,23 @@ test.beforeEach(async ({ page }) => { await login(page); await expect(page).toHa
 const madridToday = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Madrid' }).format(new Date());
 const shift = (d: string, n: number) => new Date(Date.parse(d + 'T12:00:00Z') + n * 86400000).toISOString().slice(0, 10);
 
-test('vinos: mensaje provisional mientras no hay vinos visibles y carta al añadir uno', async ({ page }) => {
+test('vinos: sugerencias, filtro por D.O. y alta de un vino', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('#vinos [data-wines-provisional]')).toHaveText(/Nuestra carta de vinos estará disponible muy pronto/);
+  await expect(page.locator('#vinos [data-wines-provisional]')).toHaveCount(0);
+  const suggested = page.locator('#vinos [data-suggested]');
+  await expect(suggested).toContainText('Lynus Infante');
+  await expect(suggested).toContainText('Luis XIV');
+  await expect(suggested).toContainText('Viuda Negra');
+  await page.locator('#vinos [data-do-select]').selectOption('DO Alicante');
+  await expect(page.locator('#vinos [data-wine="Gurgu, jove de trellat"]')).toBeVisible();
+  await expect(page.locator('#vinos [data-wine="Lynus Infante"]')).toBeHidden();
+  await page.locator('#vinos [data-do-select]').selectOption('');
+  await expect(page.locator('#vinos [data-wine="Lynus Infante"]')).toBeVisible();
+  const qr = await page.request.get('/qr.png');
+  expect(qr.status()).toBe(200);
+  expect(qr.headers()['content-type']).toContain('image/png');
   await page.goto('/admin/vinos');
-  await expect(page.locator('[data-wines-status="provisional"]')).toBeVisible();
+  await expect(page.locator('[data-wines-status="list"]')).toBeVisible();
   const f = page.locator('[data-new-wine]');
   await f.getByLabel('Nombre').fill('Tinto de prueba E2E');
   await f.getByLabel('Tipo').selectOption('tinto');
@@ -23,35 +35,34 @@ test('vinos: mensaje provisional mientras no hay vinos visibles y carta al añad
   await f.getByRole('button', { name: 'Añadir vino' }).click();
   await expect(page.getByRole('status')).toContainText('guardado');
   await page.goto('/');
-  await expect(page.locator('#vinos [data-wines-provisional]')).toHaveCount(0);
-  const wine = page.locator('#vinos [data-wine]');
+  const wine = page.locator('#vinos [data-wine="Tinto de prueba E2E"]');
   await expect(wine).toContainText('Tinto de prueba E2E');
   await expect(wine).toContainText('D.O. Alicante');
   await expect(wine).toContainText('Botella 18,50 €');
   await expect(wine).toContainText('Copa 3,50 €');
-  // precio no válido
   await page.goto('/admin/vinos');
   const row = page.locator('form[data-wine="Tinto de prueba E2E"]');
   await row.getByLabel('Precio botella (€)').fill('carísimo');
   await row.getByRole('button', { name: 'Guardar' }).click();
   await expect(page.getByRole('alert')).toContainText('Precio no válido');
-  // ocultarlo → vuelve el mensaje provisional
   await page.locator('form[data-wine="Tinto de prueba E2E"]').getByLabel('Visible').uncheck();
   await page.locator('form[data-wine="Tinto de prueba E2E"]').getByRole('button', { name: 'Guardar' }).click();
   await page.goto('/');
-  await expect(page.locator('#vinos [data-wines-provisional]')).toBeVisible();
-  // borrar
+  await expect(page.locator('#vinos [data-wine="Tinto de prueba E2E"]')).toHaveCount(0);
+  await expect(page.locator('#vinos [data-wines-provisional]')).toHaveCount(0);
   await page.goto('/admin/vinos');
   page.once('dialog', (d) => d.accept());
   await page.locator('form[data-wine="Tinto de prueba E2E"]').getByRole('button', { name: 'Borrar' }).click();
   await expect(page.getByRole('status')).toHaveText('Vino eliminado.');
-  expect(await sql('select 1 from public.wines')).toHaveLength(0);
+  const left = await sql<{ n: number }>('select count(*)::int as n from public.wines where carta_key is not null');
+  expect(left[0].n).toBeGreaterThan(0);
 });
 
-test('carta: la web muestra los 42 platos originales; crear, editar, ocultar y borrar un plato', async ({ page }) => {
+test('carta: la web muestra los 47 platos de la carta física; crear, editar, ocultar y borrar un plato', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('#carta .carta__item')).toHaveCount(42);
-  await expect(page.locator('#carta')).toContainText('Nuetras patatas Bravas');
+  await expect(page.locator('#carta .carta__item')).toHaveCount(47);
+  await expect(page.locator('#carta')).toContainText('Nuestras Patatas Bravas');
+  await expect(page.locator('.nav a[href="#galeria"]')).toHaveCount(1);
   await page.goto('/admin/carta');
   const cat = page.locator('details[data-category="frios"]');
   await cat.locator('summary').click();
@@ -101,7 +112,7 @@ test('orden 1, 2, 3…: un plato nuevo recibe el siguiente número y sale el úl
   await expect(cat.locator('form[data-item]').first().getByLabel('Orden (1 = sale primero)')).toHaveValue('1');
   const nf = cat.locator('[data-new-item]');
   await expect(nf.getByLabel('Orden (1 = sale primero)')).toHaveValue(String(n + 1));
-  await expect(page.locator('[data-new-category]').getByLabel('Orden (1 = sale primero)')).toHaveValue('6');
+  await expect(page.locator('[data-new-category]').getByLabel('Orden (1 = sale primero)')).toHaveValue('5');
   await nf.getByLabel('Nombre').fill('Plato orden E2E');
   await nf.getByRole('button', { name: 'Añadir plato' }).click();
   await expect(page.getByRole('status')).toContainText('añadido');
@@ -131,7 +142,8 @@ test('orden 1, 2, 3…: un plato nuevo recibe el siguiente número y sale el úl
   await page.goto('/admin/vinos');
   const wf = page.locator('[data-new-wine]');
   await wf.getByLabel('Tipo').selectOption('blanco');
-  await expect(wf.getByLabel('Orden (1 = sale primero)')).toHaveValue('1');
+  const [{ n: blancos }] = await sql<{ n: number }>(`select coalesce(max(sort_order), 0)::int as n from public.wines where wine_type = 'blanco'`);
+  await expect(wf.getByLabel('Orden (1 = sale primero)')).toHaveValue(String(blancos + 1));
   await sql(`delete from public.menu_items where name = 'Plato orden E2E'`);
 });
 
@@ -314,7 +326,7 @@ test('carta: crear una sección nueva con un plato aparece como pestaña en la w
   await expect(panel).toContainText('Mínimo 2 personas');
   await expect(panel.locator('.carta__item', { hasText: 'Arroz a banda E2E' })).toContainText('16,00 €');
   await expect(panel.locator('.carta__item', { hasText: 'Arroz a banda E2E' })).toContainText('Pescado');
-  await expect(page.locator('#carta .carta__item')).toHaveCount(43);
+  await expect(page.locator('#carta .carta__item')).toHaveCount(48);
   // ocultar la sección → desaparece la pestaña y sus platos
   await page.goto('/admin/carta');
   await page.locator(`details[data-category="${slug}"] summary`).click();
@@ -324,7 +336,7 @@ test('carta: crear una sección nueva con un plato aparece como pestaña en la w
   await page.goto('/');
   await expect(page.locator('[data-menu-tabs] [role="tab"]', { hasText: 'Arroces E2E' })).toHaveCount(0);
   await expect(page.locator('#carta')).not.toContainText('Arroz a banda E2E');
-  await expect(page.locator('#carta .carta__item')).toHaveCount(42);
+  await expect(page.locator('#carta .carta__item')).toHaveCount(47);
   // borrar la sección (y su plato)
   await page.goto('/admin/carta');
   await page.locator(`details[data-category="${slug}"] summary`).click();

@@ -1,24 +1,32 @@
 ---
 import { menuImageUrl, type SpecialMenuRow } from '../lib/content';
 import { formatDateEs } from '../lib/time';
+import { publicLang, t } from '../i18n/public';
 interface Props { specials: SpecialMenuRow[] }
 const { specials } = Astro.props;
-const shortDate = (d: string) => formatDateEs(d).replace(/^[^,]+, /, '').replace(/ de \d{4}$/, '');
+const lang = publicLang(Astro.locals.lang);
+const shortDate = (d: string) => {
+  if (lang === 'en') return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(`${d}T12:00:00Z`));
+  return formatDateEs(d).replace(/^[^,]+, /, '').replace(/ de \d{4}$/, '');
+};
 const range = (m: SpecialMenuRow) =>
-  m.starts_on && m.ends_on ? (m.starts_on === m.ends_on ? `El ${shortDate(m.starts_on)}` : `Del ${shortDate(m.starts_on)} al ${shortDate(m.ends_on)}`)
-  : m.ends_on ? `Hasta el ${shortDate(m.ends_on)}` : m.starts_on ? `Desde el ${shortDate(m.starts_on)}` : '';
+  m.starts_on && m.ends_on
+    ? (m.starts_on === m.ends_on ? t(lang, 'specials.on', { date: shortDate(m.starts_on) }) : t(lang, 'specials.range', { a: shortDate(m.starts_on), b: shortDate(m.ends_on) }))
+    : m.ends_on ? t(lang, 'specials.until', { date: shortDate(m.ends_on) })
+    : m.starts_on ? t(lang, 'specials.since', { date: shortDate(m.starts_on) })
+    : '';
 ---
 {specials.length > 0 && (
 <section id="menus-especiales" class="section specials" aria-labelledby="specials-title">
   <div class="container">
     <div class="section__head reveal">
-      <p class="eyebrow">Solo por unos días</p>
-      <h2 id="specials-title">Menús <em>especiales</em></h2>
+      <p class="eyebrow">{t(lang, 'specials.eyebrow')}</p>
+      <h2 id="specials-title" set:html={t(lang, 'specials.title')} />
     </div>
     <div class="specials__list">
       {specials.map((m) => (
         <article class:list={['special reveal', { 'special--image': m.image_path }]} data-special>
-          {m.image_path && <img class="special__img" src={menuImageUrl(m.image_path)} alt={`Imagen del ${m.title}`} loading="lazy" />}
+          {m.image_path && <img class="special__img" src={menuImageUrl(m.image_path)} alt={t(lang, 'specials.alt', { title: m.title })} loading="lazy" />}
           <div class="special__body">
             {(range(m) || m.subtitle) && <p class="eyebrow">{[m.subtitle, range(m)].filter(Boolean).join(' · ')}</p>}
             <h3>{m.title}</h3>
@@ -36,7 +44,7 @@ const range = (m: SpecialMenuRow) =>
             <div class="special__foot">
               {m.price && <p class="menu-day__price">{m.price}</p>}
               {m.price_note && <p class="menu-day__note">{m.price_note}</p>}
-              <a class="btn btn--outline" href="#reservar">Reserva tu mesa</a>
+              <a class="btn btn--outline" href="#reservar">{t(lang, 'specials.book')}</a>
             </div>
           </div>
         </article>

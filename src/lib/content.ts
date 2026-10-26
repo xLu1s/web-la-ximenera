@@ -7,6 +7,7 @@ import { anonClient, mediaPublicUrl } from './supabase';
 import { hasSupabase } from './env';
 import { FALLBACK_HOURS, type OpeningHour } from './hours';
 import { menu as staticMenu } from '../data/menu';
+import { denominaciones as staticDenominaciones, vinos as staticVinos } from '../data/cartaFisica';
 import { menuDelDia as staticMenuDelDia } from '../data/menuDelDia';
 import { instagramMeta } from '../data/gallery';
 
@@ -20,9 +21,10 @@ export const ALLERGENS: Record<Allergen, string> = {
   sesamo: 'Sésamo', sulfitos: 'Sulfitos', altramuces: 'Altramuces', moluscos: 'Moluscos',
 };
 
-export interface MenuItemRow { id?: number; name: string; description?: string | null; price?: string | null; half_price?: string | null; allergens: Allergen[]; sort_order?: number; visible?: boolean }
+export interface MenuItemRow { id?: number; name: string; description?: string | null; price?: string | null; half_price?: string | null; allergens: Allergen[]; sort_order?: number; visible?: boolean; recommended?: boolean; recommendation_note?: string | null }
 export interface MenuCategoryRow { id?: number; slug: string; tab: string; title: string; subtitle?: string | null; intro?: string | null; notes: string[]; sort_order?: number; visible?: boolean; items: MenuItemRow[] }
-export interface WineRow { id: number; name: string; wine_type: string; origin: string | null; description: string | null; price_bottle: number | null; price_glass: number | null; sort_order: number; visible: boolean }
+export interface WineRow { id: number; name: string; wine_type: string; origin: string | null; description: string | null; price_bottle: number | null; price_glass: number | null; sort_order: number; visible: boolean; denominacion_origen?: string | null; section?: string | null; recommended?: boolean; recommendation_note?: string | null }
+export interface DenominacionRow { slug: string; name: string; sort_order: number }
 export interface Course { title: string; items: string[] }
 export interface SpecialMenuRow { id: number; kind: 'especial' | 'del_dia'; title: string; subtitle: string | null; description: string | null; courses: Course[]; price: string | null; price_note: string | null; image_path: string | null; starts_on: string | null; ends_on: string | null; visible: boolean; sort_order: number }
 export interface GalleryRow { id: number; media_type: 'image' | 'video'; storage_path: string | null; static_path: string | null; mime_type: string | null; caption: string; credit: string | null; is_provisional: boolean; sort_order: number; visible: boolean }
@@ -30,11 +32,14 @@ export interface GalleryRow { id: number; media_type: 'image' | 'video'; storage
 export const WINE_TYPES: Record<string, string> = {
   tinto: 'Tintos', blanco: 'Blancos', rosado: 'Rosados', espumoso: 'Espumosos', generoso: 'Generosos', dulce: 'Dulces', otro: 'Otros',
 };
+/** Orden de las secciones de la carta de vinos física. */
+export const WINE_SECTION_ORDER = ['joven', 'crianza', 'galeria', 'blanco', 'cava', 'especial'] as const;
 export const WINES_PROVISIONAL_MESSAGE = 'Nuestra carta de vinos estará disponible muy pronto';
 
 export interface PublicContent {
   menu: MenuCategoryRow[];
   wines: WineRow[];
+  denominaciones: DenominacionRow[];
   specials: SpecialMenuRow[];
   menuDelDia: SpecialMenuRow | null;
   gallery: (GalleryRow & { url: string })[];
@@ -79,9 +84,14 @@ function staticContent(): PublicContent {
   return {
     menu: staticMenu.map((s, i) => ({
       slug: s.id, tab: s.tab, title: s.title, subtitle: s.subtitle ?? null, intro: s.intro ?? null, notes: s.notes ?? [], sort_order: i,
-      items: s.items.map((it) => ({ name: it.name, price: it.price ?? null, half_price: it.half ?? null, allergens: (it.allergens ?? []) as Allergen[] })),
+      items: s.items.map((it) => ({ name: it.name, price: it.price ?? null, half_price: it.half ?? null, allergens: (it.allergens ?? []) as Allergen[], recommended: !!it.recommended, recommendation_note: it.recommendationNote ?? null })),
     })),
-    wines: [],
+    wines: staticVinos.map((w, i) => ({
+      id: i + 1, name: w.name, wine_type: w.type, origin: w.origin ?? null, description: w.description ?? null,
+      price_bottle: w.price, price_glass: null, sort_order: i + 1, visible: true,
+      denominacion_origen: w.denominacion, section: w.section, recommended: !!w.recommended, recommendation_note: w.note ?? null,
+    })),
+    denominaciones: staticDenominaciones.map((d, i) => ({ slug: d.slug, name: d.name, sort_order: i + 1 })),
     specials: [],
     menuDelDia: {
       id: 0, kind: 'del_dia', title: 'Menú del día', subtitle: staticMenuDelDia.days.replace('Menú de ', ''), description: null,
@@ -96,6 +106,12 @@ function staticContent(): PublicContent {
     maxParty: 12,
     source: 'static',
   };
+}
+
+async function loadDenominaciones(db: ReturnType<typeof anonClient>): Promise<DenominacionRow[]> {
+  const { data, error } = await db.from('denominaciones').select('slug, name, sort_order').eq('visible', true).order('sort_order').order('name');
+  if (error) return [];
+  return (data ?? []) as DenominacionRow[];
 }
 
 export async function getPublicContent(): Promise<PublicContent> {
@@ -118,6 +134,7 @@ export async function getPublicContent(): Promise<PublicContent> {
     return {
       menu,
       wines: (wines.data ?? []) as WineRow[],
+      denominaciones: await loadDenominaciones(db),
       specials: allSpecials.filter((s) => s.kind === 'especial'),
       menuDelDia: allSpecials.find((s) => s.kind === 'del_dia') ?? null,
       gallery: ((gallery.data ?? []) as GalleryRow[]).map((g) => ({ ...g, url: galleryUrl(g) })),

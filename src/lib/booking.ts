@@ -8,8 +8,32 @@ export type BookingErrorCode =
   | 'invalid_email' | 'notes_too_long' | 'invalid_datetime' | 'past' | 'closed_day' | 'blocked'
   | 'outside_hours' | 'invalid_slot' | 'full' | 'rate_limited' | 'server_error' | 'not_configured';
 
-/** Mensajes en español, claros para el cliente. */
-export function bookingErrorMessage(code: string, extra: { max?: number; remaining?: number } = {}): string {
+/** Mensajes claros para el cliente. `lang` por defecto español (lo que cubren los tests). */
+export function bookingErrorMessage(code: string, extra: { max?: number; remaining?: number } = {}, lang: 'es' | 'en' = 'es'): string {
+  if (lang === 'en') {
+    switch (code) {
+      case 'consent_required': return 'To book, please accept the privacy policy.';
+      case 'party_too_small': return 'Please enter at least 1 guest.';
+      case 'party_too_large': return `Online bookings allow up to ${extra.max ?? MAX_PARTY_DEFAULT} guests. For larger groups, contact the restaurant.`;
+      case 'invalid_name': return 'Enter your name (at least 2 characters).';
+      case 'invalid_phone': return 'Check the phone number: it needs at least 9 digits.';
+      case 'invalid_email': return 'Check the email: it does not look valid.';
+      case 'notes_too_long': return 'Notes cannot be longer than 500 characters.';
+      case 'invalid_datetime': return 'Choose a valid date and time.';
+      case 'past': return 'That date and time have already passed. Choose a future time.';
+      case 'closed_day': return 'The restaurant is closed that day. Choose another date.';
+      case 'blocked': return 'Sorry, that service is not taking online bookings. Choose another date.';
+      case 'outside_hours': return 'That time is outside our booking hours. Choose one of the available times.';
+      case 'invalid_slot': return 'Choose one of the available times from the list.';
+      case 'full':
+        return extra.remaining && extra.remaining > 0
+          ? `Not enough seats for that service (${extra.remaining} left). Try fewer guests, another time or another day.`
+          : 'That service is full. Try another time or day.';
+      case 'rate_limited': return 'Too many attempts in a row. Wait a few minutes and try again.';
+      case 'not_configured': return 'Online booking is not available right now. Please try again later.';
+      default: return 'We could not save the booking. Please try again in a few minutes.';
+    }
+  }
   switch (code) {
     case 'consent_required': return 'Para reservar debes aceptar la política de privacidad.';
     case 'party_too_small': return 'Indica al menos 1 persona.';

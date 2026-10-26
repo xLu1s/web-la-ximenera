@@ -19,10 +19,10 @@ beforeAll(async () => {
 afterAll(async () => { await pool.end(); });
 
 describe('público (clave anon)', () => {
-  it('lee la carta publicada (42 platos, sin los ocultos)', async () => {
+  it('lee la carta publicada (47 platos, sin los ocultos)', async () => {
     const { data, error } = await a.from('menu_items').select('id');
     expect(error).toBeNull();
-    expect(data).toHaveLength(42);
+    expect(data).toHaveLength(47);
     await pool.query(`update public.menu_items set visible = false where name = 'Ostras'`);
     const { data: d2 } = await a.from('menu_items').select('name').eq('name', 'Ostras');
     expect(d2).toHaveLength(0);
@@ -74,7 +74,9 @@ describe('público (clave anon)', () => {
   it('vinos y galería: solo visibles', async () => {
     await pool.query(`insert into public.wines (name, wine_type, visible) values ('Visible', 'tinto', true), ('Oculto', 'blanco', false)`);
     const { data } = await a.from('wines').select('name');
-    expect(data!.map((x) => x.name)).toEqual(['Visible']);
+    const names = data!.map((x) => x.name);
+    expect(names).toContain('Visible');
+    expect(names).not.toContain('Oculto');
     await pool.query(`update public.gallery_items set visible = false where id = 1`);
     const { data: g } = await a.from('gallery_items').select('id');
     expect(g).toHaveLength(11);

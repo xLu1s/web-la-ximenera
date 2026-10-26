@@ -51,8 +51,15 @@ la tabla `admins` (la migración inserta `luisbalaguer97@gmail.com`). Los emails
 en Mailpit: http://127.0.0.1:54324.
 
 Contenido inicial: `supabase/migrations/20261023000400_seed_content.sql` se genera con `npm run seed:generate`
-a partir de `src/data/*` (carta, menú del día, horario y galería). Esos ficheros siguen siendo la reserva estática
-si Supabase no responde.
+a partir de `src/data/*` (carta histórica, menú del día, horario y galería). Ese fichero ya está aplicado y no se reescribe.
+La carta física de octubre de 2026 (platos, vinos, denominaciones de origen y recomendados) entra con la migración
+`supabase/migrations/20261026120000_carta_vinos.sql`. En local, `supabase start` o `supabase db push` la aplican.
+Los tests, al resetear datos, vuelven a ejecutar `supabase/seeds/carta_2026.sql` (solo datos, idempotente) encima del seed histórico.
+
+Esa migración no borra reservas, usuarios, galería, horarios ni menús especiales. Sí sustituye los platos antiguos
+de las secciones fríos, calientes, principal y postres que no tengan `carta_key`, y realinea los vinos que sí lo tengan
+(`visible = true`). Los vinos añadidos a mano, sin `carta_key`, se conservan. No hace falta ninguna variable de entorno nueva.
+El QR de las mesas (`/qr` y `/qr.png`) apunta siempre a `https://la-ximenera.vercel.app`.
 
 ## Tests
 
@@ -88,7 +95,7 @@ confirmación. Hay que verificar un dominio propio en Resend (registros DNS) y c
 ## Puesta en producción
 
 1. **Supabase**: crear el proyecto (región UE), y desde este repo:
-   `supabase link --project-ref <ref>` y `supabase db push` (aplica todas las migraciones, incluido el contenido).
+   `supabase link --project-ref <ref>` y `supabase db push` (aplica todas las migraciones, incluida `20261026120000_carta_vinos.sql`).
 2. **Auth**: Authentication → Users → *Add user* con `luisbalaguer97@gmail.com` y contraseña.
    En Authentication → URL Configuration: *Site URL* = `PUBLIC_SITE_URL` y añadir
    `PUBLIC_SITE_URL/admin/nueva-clave` a *Redirect URLs*. Desactivar el registro público (*Allow new users to sign up*).
