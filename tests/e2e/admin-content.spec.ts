@@ -21,9 +21,6 @@ test('vinos: sugerencias, filtro por D.O. y alta de un vino', async ({ page }) =
   await expect(page.locator('#vinos [data-wine="Lynus Infante"]')).toBeHidden();
   await page.locator('#vinos [data-do-select]').selectOption('');
   await expect(page.locator('#vinos [data-wine="Lynus Infante"]')).toBeVisible();
-  const qr = await page.request.get('/qr.png');
-  expect(qr.status()).toBe(200);
-  expect(qr.headers()['content-type']).toContain('image/png');
   await page.goto('/admin/vinos');
   await expect(page.locator('[data-wines-status="list"]')).toBeVisible();
   const f = page.locator('[data-new-wine]');

@@ -35,7 +35,9 @@ describe('público (clave anon)', () => {
     await pool.query(`update public.menu_categories set visible = true where slug = 'postres'`);
   });
   it('NO puede escribir en ninguna tabla de contenido', async () => {
-    expect((await a.from('menu_items').insert({ category_id: 1, name: 'Hack' })).error).not.toBeNull();
+    const { rows: frios } = await pool.query<{ id: number }>(`select id from public.menu_categories where slug = 'frios'`);
+    expect(frios).toHaveLength(1);
+    expect((await a.from('menu_items').insert({ category_id: frios[0].id, name: 'Hack' })).error).not.toBeNull();
     expect((await a.from('wines').insert({ name: 'Hack', wine_type: 'tinto' })).error).not.toBeNull();
     expect((await a.from('special_menus').insert({ title: 'Hack' })).error).not.toBeNull();
     expect((await a.from('gallery_items').insert({ media_type: 'image', static_path: '/x.jpg' })).error).not.toBeNull();
@@ -77,9 +79,14 @@ describe('público (clave anon)', () => {
     const names = data!.map((x) => x.name);
     expect(names).toContain('Visible');
     expect(names).not.toContain('Oculto');
-    await pool.query(`update public.gallery_items set visible = false where id = 1`);
+    const hidden = await pool.query<{ id: number }>(
+      `update public.gallery_items set visible = false where static_path = '/galeria/ig-01.webp' returning id`,
+    );
+    expect(hidden.rowCount).toBe(1);
     const { data: g } = await a.from('gallery_items').select('id');
     expect(g).toHaveLength(11);
+    expect(g!.some((row) => row.id === hidden.rows[0].id)).toBe(false);
+    await pool.query(`update public.gallery_items set visible = true where static_path = '/galeria/ig-01.webp'`);
   });
   it('NO puede subir archivos a Storage', async () => {
     const { error } = await a.storage.from('media').upload(`galeria/anon-${Date.now()}.png`, png, { contentType: 'image/png' });
@@ -90,9 +97,16 @@ describe('público (clave anon)', () => {
 describe('usuario autenticado que NO es admin', () => {
   it('no puede editar contenido ni ver reservas', async () => {
     expect((await user.from('wines').insert({ name: 'Hack', wine_type: 'tinto' })).error).not.toBeNull();
-    const upd = await user.from('menu_items').update({ price: '0 €' }).eq('id', 1).select();
+    const { rows: dish } = await pool.query<{ id: number; price: string }>(
+      `select id, price from public.menu_items where carta_key = 'f-ostras'`,
+    );
+    expect(dish).toHaveLength(1);
+    const upd = await user.from('menu_items').update({ price: '0 €' }).eq('id', dish[0].id).select();
     expect(upd.data ?? []).toHaveLength(0);
-    const { rows } = await pool.query('select price from public.menu_items where id = 1');
+    const { rows } = await pool.query<{ price: string }>(
+      `select price from public.menu_items where carta_key = 'f-ostras'`,
+    );
+    expect(rows[0].price).toBe(dish[0].price);
     expect(rows[0].price).not.toBe('0 €');
     const b = await user.from('bookings').select('*');
     expect(b.data ?? []).toHaveLength(0);
@@ -117,9 +131,11 @@ describe('admin', () => {
     expect(w.error).toBeNull();
     expect((await admin.from('wines').update({ price_glass: 3.5 }).eq('id', w.data!.id).select().single()).data?.price_glass).toBe(3.5);
     expect((await admin.from('wines').delete().eq('id', w.data!.id)).error).toBeNull();
-    const it = await admin.from('menu_items').insert({ category_id: 1, name: 'Plato admin', price: '10 €', allergens: ['gluten'] }).select().single();
+    const { rows: frios } = await pool.query<{ id: number }>(`select id from public.menu_categories where slug = 'frios'`);
+    expect(frios).toHaveLength(1);
+    const it = await admin.from('menu_items').insert({ category_id: frios[0].id, name: 'Plato admin', price: '10 €', allergens: ['gluten'] }).select().single();
     expect(it.error).toBeNull();
-    expect((await admin.from('menu_items').insert({ category_id: 1, name: 'Mal', allergens: ['veneno'] })).error).not.toBeNull();
+    expect((await admin.from('menu_items').insert({ category_id: frios[0].id, name: 'Mal', allergens: ['veneno'] })).error).not.toBeNull();
     expect((await admin.from('menu_items').delete().eq('id', it.data!.id)).error).toBeNull();
     const m = await admin.from('special_menus').insert({ title: 'Navidad', starts_on: '2032-12-20', ends_on: '2032-12-01' });
     expect(m.error).not.toBeNull(); // fin anterior al inicio

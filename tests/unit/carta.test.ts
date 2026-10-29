@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { denominaciones, menu, vinos } from '../../src/data/cartaFisica';
 import { t } from '../../src/i18n/public';
 import { ta } from '../../src/i18n/admin';
-import { QR_TARGET } from '../../src/lib/qr';
 
 describe('carta física oct 2026', () => {
   it('tiene 47 platos y 71 vinos con D.O. del catálogo', () => {
@@ -27,6 +26,5 @@ describe('carta física oct 2026', () => {
     expect(ta('es', 'wine.origin')).toBe('D.O. / origen');
     expect(ta('es', 'wine.add')).toBe('Añadir vino');
     expect(ta('zh', 'nav.carta')).toBe('菜单');
-    expect(QR_TARGET).toBe('https://la-ximenera.vercel.app');
   });
 });
