@@ -9,7 +9,6 @@ import ig01 from '../assets/instagram/ig-01.jpg';
 interface Props { menu: MenuCategoryRow[]; menuDelDia: SpecialMenuRow | null }
 const { menu, menuDelDia } = Astro.props;
 const lang = publicLang(Astro.locals.lang);
-const suggested = menu.flatMap((s) => s.items.filter((it) => it.recommended && it.visible !== false).map((it) => ({ ...it, section: s.slug })));
 const highlights = [
   { src: ig03, name: 'De nuestras brasas', alt: 'Carne a la brasa con verduras' },
   { src: ig06, name: 'Tartar de atún', alt: 'Tartar de atún con algas' },
@@ -38,26 +37,6 @@ const tabId = (s: MenuCategoryRow) => s.slug;
         ))}
       </ul>
     </div>
-
-    {suggested.length > 0 && (
-      <div class="suggest reveal" data-suggested>
-        <p class="eyebrow">{t(lang, 'menu.suggest')}</p>
-        <p class="suggest__lead">{t(lang, 'menu.suggestLead')}</p>
-        <ul class="suggest__list" role="list">
-          {suggested.map((it) => {
-            const note = wineNote(lang, it.recommendation_note);
-            return (
-              <li>
-                <span class="sug">{t(lang, 'wines.badge')}</span>
-                <strong>{it.name}</strong>
-                {note && <span class="suggest__note">{note}</span>}
-                {it.price && <span class="suggest__price">{it.half_price ? `${t(lang, 'menu.half')} ${it.half_price} · ` : ''}{it.price}</span>}
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-    )}
 
     <div class="tabs reveal" role="tablist" aria-label={t(lang, 'menu.tabs')} data-menu-tabs>
       {menu.map((s, i) => (
