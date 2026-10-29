@@ -58,7 +58,7 @@ if (fd) {
         f.access_token.value = h.get('access_token'); f.refresh_token.value = h.get('refresh_token'); f.submit();
       } else if (h.get('error_description')) {
         var el = document.querySelector('[data-hash-error]');
-        el.textContent = document.documentElement.lang === 'zh-Hans' ? '链接无效或已过期。请重新申请。' : (document.documentElement.lang === 'en' ? 'This link is not valid or has expired. Ask for a new one.' : 'El enlace no es válido o ha caducado. Pide uno nuevo.'); el.hidden = false;
+        el.textContent = document.documentElement.lang === 'zh-Hans' ? '链接无效或已过期。请重新申请。' : 'El enlace no es válido o ha caducado. Pide uno nuevo.'; el.hidden = false;
       }
     })();
   </script>

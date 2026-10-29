@@ -78,7 +78,7 @@ const totalPeople = bookings.filter((b) => b.status === 'confirmada').reduce((n,
       <section class="card" data-service={s.service}>
         <div class="row" style="justify-content:space-between;align-items:center">
           <h2 style="margin:0">{svcName(s.service)} <small class="help">{s.opens.slice(0, 5)}–{s.closes.slice(0, 5) === '24:00' ? '00:00' : s.closes.slice(0, 5)} · última reserva {s.last_booking.slice(0, 5)}</small></h2>
-          {s.is_closed ? <span class="badge badge--err">{lang === 'zh' ? '已关闭' : lang === 'en' ? 'Blocked' : 'Bloqueado'}{s.closed_note ? `: ${s.closed_note}` : ''}</span>
+          {s.is_closed ? <span class="badge badge--err">{lang === 'zh' ? '已关闭' : 'Bloqueado'}{s.closed_note ? `: ${s.closed_note}` : ''}</span>
             : s.booked >= s.capacity ? <span class="badge badge--err">Completo</span> : <span class="badge badge--ok">Abierto</span>}
         </div>
         <p style="margin:.6rem 0 0" data-occupancy>{s.booked} / {s.capacity} personas</p>

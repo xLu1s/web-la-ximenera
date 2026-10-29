@@ -69,23 +69,41 @@ test.describe('Carta pública e idioma', () => {
   });
 });
 
-test('el panel cambia de idioma (ES, EN, ZH)', async ({ page }) => {
+test('el panel cambia de idioma (ES y 中文); el inglés del admin cae a español', async ({ page }) => {
+  await page.goto('/admin/login');
+  const bare = page.locator('.adm__langs--bare');
+  await expect(bare.getByRole('link')).toHaveText(['ES', '中文']);
+  await expect(bare.getByRole('link', { name: 'EN', exact: true })).toHaveCount(0);
+
+  await page.context().addCookies([{ name: 'lx_admin_lang', value: 'en', domain: 'localhost', path: '/' }]);
+  await page.goto('/admin/login');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'es');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Entrar al panel');
+  await expect(bare.locator('a[aria-current="true"]')).toHaveText('ES');
+
+  await page.goto('/admin/login?admin_lang=en');
+  await expect(page).toHaveURL(/\/admin\/login\/?$/);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'es');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Entrar al panel');
+
   await login(page);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Reservas');
+  const langs = page.locator('.adm__langs');
+  await expect(langs.getByRole('link')).toHaveText(['ES', '中文']);
+  await expect(langs.getByRole('link', { name: 'EN', exact: true })).toHaveCount(0);
 
-  await page.locator('.adm__langs').getByRole('link', { name: 'EN', exact: true }).click();
+  await page.goto('/admin/reservas?admin_lang=en');
   await expect(page).toHaveURL(/\/admin\/reservas\/?$/);
-  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Bookings');
-  await expect(page.locator('.adm__nav').getByRole('link', { name: 'Gallery', exact: true })).toBeVisible();
-  await expect(page.locator('.adm__langs a[aria-current="true"]')).toHaveText('EN');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'es');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Reservas');
+  await expect(langs.locator('a[aria-current="true"]')).toHaveText('ES');
 
-  await page.locator('.adm__langs').getByRole('link', { name: '中文', exact: true }).click();
+  await langs.getByRole('link', { name: '中文', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-Hans');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('预订');
   await expect(page.locator('.adm__nav').getByRole('link', { name: '菜单', exact: true })).toBeVisible();
 
-  await page.locator('.adm__langs').getByRole('link', { name: 'ES', exact: true }).click();
+  await langs.getByRole('link', { name: 'ES', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('lang', 'es');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Reservas');
   await expect(page.locator('.adm__nav').getByRole('link', { name: 'Carta', exact: true })).toBeVisible();

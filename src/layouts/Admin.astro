@@ -36,7 +36,6 @@ const htmlLang = lang === 'zh' ? 'zh-Hans' : lang;
         <div class="adm__tools">
           <span class="adm__langs" role="group" aria-label={ta(lang, 'lang')}>
             <a href={langHref('es')} hreflang="es" lang="es" aria-current={lang === 'es' ? 'true' : undefined}>ES</a>
-            <a href={langHref('en')} hreflang="en" lang="en" aria-current={lang === 'en' ? 'true' : undefined}>EN</a>
             <a href={langHref('zh')} hreflang="zh" lang="zh" aria-current={lang === 'zh' ? 'true' : undefined}>中文</a>
           </span>
           <button type="button" class="adm__toggle" aria-expanded="false" aria-controls="adm-nav" data-adm-toggle>{ta(lang, 'menu')}</button>
@@ -51,7 +50,6 @@ const htmlLang = lang === 'zh' ? 'zh-Hans' : lang;
     {bare && (
       <p class="adm__langs adm__langs--bare" role="group" aria-label={ta(lang, 'lang')}>
         <a href={langHref('es')} hreflang="es" lang="es" aria-current={lang === 'es' ? 'true' : undefined}>ES</a>
-        <a href={langHref('en')} hreflang="en" lang="en" aria-current={lang === 'en' ? 'true' : undefined}>EN</a>
         <a href={langHref('zh')} hreflang="zh" lang="zh" aria-current={lang === 'zh' ? 'true' : undefined}>中文</a>
       </p>
     )}
