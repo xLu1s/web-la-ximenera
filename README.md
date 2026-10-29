@@ -59,7 +59,7 @@ Los tests, al resetear datos, vuelven a ejecutar `supabase/seeds/carta_2026.sql`
 Esa migración no borra reservas, usuarios, galería, horarios ni menús especiales. Sí sustituye los platos antiguos
 de las secciones fríos, calientes, principal y postres que no tengan `carta_key`, y realinea los vinos que sí lo tengan
 (`visible = true`). Los vinos añadidos a mano, sin `carta_key`, se conservan. No hace falta ninguna variable de entorno nueva.
-El QR de las mesas (`/qr` y `/qr.png`) apunta siempre a `https://la-ximenera.vercel.app`.
+El QR de las mesas no es una página de la web. El archivo imprimible está en `assets-print/qr-carta.png` y `assets-print/qr-carta.pdf` (texto «Escanea para ver la carta») y abre `https://la-ximenera.vercel.app/carta`. Para regenerarlo: `node scripts/generate-qr-mesa.mts`.
 
 ## Tests
 
