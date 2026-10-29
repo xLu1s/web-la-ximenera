@@ -11,7 +11,6 @@ const dos = [
   ...catalog.filter((d) => present.includes(d.name)).map((d) => d.name),
   ...present.filter((n) => !known.has(n)).sort((a, b) => a.localeCompare(b, 'es')),
 ];
-const suggested = wines.filter((w) => w.recommended);
 const groups = [...WINE_SECTION_ORDER, 'otro']
   .map((section) => ({ section, items: wines.filter((w) => (w.section || 'otro') === section) }))
   .filter((g) => g.items.length > 0);
@@ -30,23 +29,6 @@ const soon = t(lang, 'wines.soon');
       </div>
     ) : (
       <div data-wine-board>
-        {suggested.length > 0 && (
-          <div class="suggest reveal" data-suggested>
-            <p class="eyebrow">{t(lang, 'wines.suggest')}</p>
-            <p class="suggest__lead">{t(lang, 'wines.suggestLead')}</p>
-            <ul class="suggest__list" role="list">
-              {suggested.map((w) => (
-                <li>
-                  <span class="sug">{t(lang, 'wines.badge')}</span>
-                  <strong>{w.name}</strong>
-                  {w.denominacion_origen && <span class="suggest__do">{w.denominacion_origen}</span>}
-                  {wineNote(lang, w.recommendation_note) && <span class="suggest__note">{wineNote(lang, w.recommendation_note)}</span>}
-                  {w.price_bottle != null && <span class="suggest__price">{formatEuro(w.price_bottle)}</span>}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
         {dos.length > 0 && (
           <div class="do-filter reveal">
             <label class="do-filter__label" for="do-select">{t(lang, 'wines.filter')}</label>
@@ -116,12 +98,6 @@ const soon = t(lang, 'wines.soon');
   }
 </script>
 <style is:global>
-  .suggest { margin-top: 1.5rem; padding: 1.1rem 1.2rem; background: #fffaf2; border: 1px solid rgb(166 123 91 / .45); }
-  .suggest__lead { margin: 0 0 .8rem; color: var(--muted); }
-  .suggest__list { list-style: none; margin: 0; padding: 0; display: grid; gap: .7rem; }
-  .suggest__list li { display: flex; flex-wrap: wrap; align-items: baseline; gap: .35rem .7rem; }
-  .suggest__do, .suggest__note { font-size: .85rem; color: var(--muted); }
-  .suggest__price { margin-left: auto; font-weight: 700; color: var(--walnut); }
   .sug { display: inline-block; margin-left: .35rem; padding: .05rem .45rem; border-radius: 999px; background: var(--gold); color: var(--espresso); font-family: var(--font-body); font-size: .68rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; vertical-align: middle; }
   .do-filter { margin-top: 1.4rem; display: grid; gap: .7rem; }
   .do-filter__label { font-size: .78rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--gold-dark); }

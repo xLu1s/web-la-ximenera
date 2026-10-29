@@ -12,10 +12,11 @@ const shift = (d: string, n: number) => new Date(Date.parse(d + 'T12:00:00Z') + 
 test('vinos: sugerencias, filtro por D.O. y alta de un vino', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#vinos [data-wines-provisional]')).toHaveCount(0);
-  const suggested = page.locator('#vinos [data-suggested]');
-  await expect(suggested).toContainText('Lynus Infante');
-  await expect(suggested).toContainText('Luis XIV');
-  await expect(suggested).toContainText('Viuda Negra');
+  await expect(page.locator('#vinos [data-suggested]')).toHaveCount(0);
+  await expect(page.locator('#vinos')).not.toContainText('Te sugerimos');
+  for (const name of ['Lynus Infante', 'Luis XIV', 'Viuda Negra']) {
+    await expect(page.locator(`#vinos [data-wine="${name}"] .sug`)).toHaveText('Sugerencia');
+  }
   await page.locator('#vinos [data-do-select]').selectOption('DO Alicante');
   await expect(page.locator('#vinos [data-wine="Gurgu, jove de trellat"]')).toBeVisible();
   await expect(page.locator('#vinos [data-wine="Lynus Infante"]')).toBeHidden();
@@ -69,7 +70,8 @@ test('carta: marcar y quitar la sugerencia de un plato que ya existe', async ({ 
   };
   try {
     await page.goto('/#carta');
-    await expect(page.locator('#carta [data-suggested]')).not.toContainText(name);
+    await expect(page.locator('#carta [data-suggested]')).toHaveCount(0);
+    await expect(page.locator('#panel-frios .carta__item', { hasText: name }).locator('.sug')).toHaveCount(0);
     await page.goto('/admin/carta');
     await page.locator('details[data-category="frios"] summary').click();
     const ef = page.locator(`form[data-item="${name}"]`);
@@ -78,15 +80,17 @@ test('carta: marcar y quitar la sugerencia de un plato que ya existe', async ({ 
     await ef.getByRole('button', { name: 'Guardar' }).click();
     await expect(page.getByRole('status')).toContainText('guardado');
     await page.goto('/#carta');
-    const suggested = page.locator('#carta [data-suggested]');
-    await expect(suggested).toContainText(name);
-    await expect(suggested).toContainText(note);
-    await expect(page.locator('#panel-frios .carta__item', { hasText: name })).toContainText('Sugerencia');
+    await expect(page.locator('#carta [data-suggested]')).toHaveCount(0);
+    const item = page.locator('#panel-frios .carta__item', { hasText: name });
+    await expect(item.locator('.sug')).toHaveText('Sugerencia');
+    await expect(item).toContainText(note);
     await expect(page.locator('#carta .carta__item')).toHaveCount(47);
   } finally {
     await restore();
     await page.goto('/#carta');
-    await expect(page.locator('#carta [data-suggested]')).not.toContainText(name);
+    const item = page.locator('#panel-frios .carta__item', { hasText: name });
+    await expect(item.locator('.sug')).toHaveCount(0);
+    await expect(item).not.toContainText(note);
   }
 });
 

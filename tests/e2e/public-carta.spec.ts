@@ -25,22 +25,28 @@ test.describe('Carta pública e idioma', () => {
 
   test('la carta muestra los platos marcados como sugerencia', async ({ page }) => {
     await page.goto('/#carta');
-    const suggested = page.locator('#carta [data-suggested]');
-    await expect(suggested).toContainText('Te sugerimos');
-    await expect(suggested).toContainText('Tartar de Atún Rojo sobre Wakame');
-    await expect(suggested).toContainText('Mejillones al Curry Thai');
-    await expect(suggested).toContainText('Solomillo de Vaca a la brasa');
+    await expect(page.locator('#carta [data-suggested]')).toHaveCount(0);
+    await expect(page.locator('#carta')).not.toContainText('Te sugerimos');
     await expect(page.locator('#carta .carta__item')).toHaveCount(47);
-    await expect(page.locator('#panel-frios .carta__item', { hasText: 'Tartar de Atún Rojo sobre Wakame' })).toContainText('Sugerencia');
+    await expect(page.locator('#panel-frios .carta__item', { hasText: 'Tartar de Atún Rojo sobre Wakame' }).locator('.sug')).toHaveText('Sugerencia');
+    await page.locator('#tab-calientes').click();
+    await expect(page.locator('#panel-calientes .carta__item', { hasText: 'Mejillones al Curry Thai' }).locator('.sug')).toHaveText('Sugerencia');
+    await page.locator('#tab-principal').click();
+    await expect(page.locator('#panel-principal .carta__item', { hasText: 'Solomillo de Vaca a la brasa' }).locator('.sug')).toHaveText('Sugerencia');
+    await page.locator('#tab-frios').click();
+    const ostras = page.locator('#panel-frios .carta__item', { hasText: 'Ostras' });
+    await expect(ostras).toHaveCount(1);
+    await expect(ostras.locator('.sug')).toHaveCount(0);
   });
 
-  test('vinos: «Te sugerimos» y filtro por D.O.', async ({ page }) => {
+  test('vinos: la sugerencia va en la ficha y el filtro por D.O. sigue', async ({ page }) => {
     await page.goto('/#vinos');
-    const suggested = page.locator('#vinos [data-suggested]');
-    await expect(suggested).toContainText('Te sugerimos');
-    await expect(suggested).toContainText('Lynus Infante');
-    await expect(suggested).toContainText('Luis XIV');
-    await expect(suggested).toContainText('Viuda Negra');
+    await expect(page.locator('#vinos [data-suggested]')).toHaveCount(0);
+    await expect(page.locator('#vinos')).not.toContainText('Te sugerimos');
+    for (const name of ['Lynus Infante', 'Luis XIV', 'Viuda Negra']) {
+      await expect(page.locator(`#vinos [data-wine="${name}"] .sug`)).toHaveText('Sugerencia');
+    }
+    await expect(page.locator('#vinos [data-wine="Gurgu, jove de trellat"] .sug')).toHaveCount(0);
 
     await page.locator('#vinos [data-do-select]').selectOption('DO Alicante');
     await expect(page.locator('#vinos [data-wine="Gurgu, jove de trellat"]')).toBeVisible();
@@ -75,9 +81,12 @@ test.describe('Carta pública e idioma', () => {
     await expect(page.locator('#tab-principal')).toHaveText('Mains');
     await expect(page.locator('#tab-postres')).toHaveText('Dessert');
     await expect(page.locator('#carta')).toContainText('Ostras');
-    await expect(page.locator('#carta [data-suggested]')).toContainText('We suggest');
-    await expect(page.locator('#carta [data-suggested]')).toContainText('Tartar de Atún Rojo sobre Wakame');
-    await expect(page.locator('#vinos [data-suggested]')).toContainText('We suggest');
+    await expect(page.locator('#carta [data-suggested]')).toHaveCount(0);
+    await expect(page.locator('#carta')).not.toContainText('We suggest');
+    await expect(page.locator('#panel-frios .carta__item', { hasText: 'Tartar de Atún Rojo sobre Wakame' }).locator('.sug')).toHaveText('Suggested');
+    await expect(page.locator('#vinos [data-suggested]')).toHaveCount(0);
+    await expect(page.locator('#vinos')).not.toContainText('We suggest');
+    await expect(page.locator('#vinos [data-wine="Lynus Infante"] .sug')).toHaveText('Suggested');
     await expect(page.locator('#vinos label[for="do-select"]')).toHaveText('Filter by appellation');
   });
 });
