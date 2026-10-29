@@ -1,7 +1,7 @@
 ---
 import { Image } from 'astro:assets';
 import { type Allergen, type MenuCategoryRow, type SpecialMenuRow } from '../lib/content';
-import { allergenName, publicLang, sectionLabel, t } from '../i18n/public';
+import { allergenName, publicLang, sectionLabel, t, wineNote } from '../i18n/public';
 // Fotos oficiales del Instagram @laximenera_restaurante (posts en src/data/gallery.ts)
 import ig03 from '../assets/instagram/ig-03.jpg';
 import ig06 from '../assets/instagram/ig-06.jpg';
@@ -9,7 +9,7 @@ import ig01 from '../assets/instagram/ig-01.jpg';
 interface Props { menu: MenuCategoryRow[]; menuDelDia: SpecialMenuRow | null }
 const { menu, menuDelDia } = Astro.props;
 const lang = publicLang(Astro.locals.lang);
-const suggested = menu.flatMap((s) => s.items.filter((it) => it.recommended).map((it) => ({ ...it, section: s.slug })));
+const suggested = menu.flatMap((s) => s.items.filter((it) => it.recommended && it.visible !== false).map((it) => ({ ...it, section: s.slug })));
 const highlights = [
   { src: ig03, name: 'De nuestras brasas', alt: 'Carne a la brasa con verduras' },
   { src: ig06, name: 'Tartar de atún', alt: 'Tartar de atún con algas' },
@@ -44,13 +44,17 @@ const tabId = (s: MenuCategoryRow) => s.slug;
         <p class="eyebrow">{t(lang, 'menu.suggest')}</p>
         <p class="suggest__lead">{t(lang, 'menu.suggestLead')}</p>
         <ul class="suggest__list" role="list">
-          {suggested.map((it) => (
-            <li>
-              <span class="sug">{t(lang, 'wines.badge')}</span>
-              <strong>{it.name}</strong>
-              {it.price && <span class="suggest__price">{it.half_price ? `${t(lang, 'menu.half')} ${it.half_price} · ` : ''}{it.price}</span>}
-            </li>
-          ))}
+          {suggested.map((it) => {
+            const note = wineNote(lang, it.recommendation_note);
+            return (
+              <li>
+                <span class="sug">{t(lang, 'wines.badge')}</span>
+                <strong>{it.name}</strong>
+                {note && <span class="suggest__note">{note}</span>}
+                {it.price && <span class="suggest__price">{it.half_price ? `${t(lang, 'menu.half')} ${it.half_price} · ` : ''}{it.price}</span>}
+              </li>
+            );
+          })}
         </ul>
       </div>
     )}
@@ -76,6 +80,7 @@ const tabId = (s: MenuCategoryRow) => s.slug;
                   {it.name}
                   {it.recommended && <span class="sug">{t(lang, 'wines.badge')}</span>}
                   {it.description && <span class="carta__desc">{it.description}</span>}
+                  {wineNote(lang, it.recommendation_note) && <span class="carta__desc">{wineNote(lang, it.recommendation_note)}</span>}
                   {it.allergens?.map((a) => <span class={`alg alg--${a}`} title={labelOf(a)}><span class="sr-only">{t(lang, 'menu.allergen')}</span>{labelOf(a)}</span>)}
                 </span>
                 <span class="carta__dots" aria-hidden="true"></span>

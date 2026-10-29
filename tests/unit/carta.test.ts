@@ -16,6 +16,11 @@ describe('carta física oct 2026', () => {
       expect(['joven', 'crianza', 'galeria', 'blanco', 'cava', 'especial']).toContain(w.section);
     }
     expect(vinos.filter((w) => w.recommended).map((w) => w.name).sort()).toEqual(['Luis XIV', 'Lynus Infante', 'Viuda Negra']);
+    expect(menu.flatMap((s) => s.items).filter((it) => it.recommended).map((it) => it.name).sort()).toEqual([
+      'Mejillones al Curry Thai',
+      'Solomillo de Vaca a la brasa',
+      'Tartar de Atún Rojo sobre Wakame',
+    ]);
     expect(dishes.some((d) => d.name === 'Nuestras Patatas Bravas')).toBe(true);
   });
 
