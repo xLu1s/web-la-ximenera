@@ -55,6 +55,41 @@ test('vinos: sugerencias, filtro por D.O. y alta de un vino', async ({ page }) =
   expect(left[0].n).toBeGreaterThan(0);
 });
 
+test('carta: marcar y quitar la sugerencia de un plato que ya existe', async ({ page }) => {
+  const name = 'Ostras';
+  const note = 'La del día';
+  const restore = async () => {
+    await page.goto('/admin/carta');
+    await page.locator('details[data-category="frios"] summary').click();
+    const ef = page.locator(`form[data-item="${name}"]`);
+    await ef.getByLabel('Recomendado').uncheck();
+    await ef.getByLabel('Nota de la sugerencia').fill('');
+    await ef.getByRole('button', { name: 'Guardar' }).click();
+    await expect(page.getByRole('status')).toContainText('guardado');
+  };
+  try {
+    await page.goto('/#carta');
+    await expect(page.locator('#carta [data-suggested]')).not.toContainText(name);
+    await page.goto('/admin/carta');
+    await page.locator('details[data-category="frios"] summary').click();
+    const ef = page.locator(`form[data-item="${name}"]`);
+    await ef.getByLabel('Recomendado').check();
+    await ef.getByLabel('Nota de la sugerencia').fill(note);
+    await ef.getByRole('button', { name: 'Guardar' }).click();
+    await expect(page.getByRole('status')).toContainText('guardado');
+    await page.goto('/#carta');
+    const suggested = page.locator('#carta [data-suggested]');
+    await expect(suggested).toContainText(name);
+    await expect(suggested).toContainText(note);
+    await expect(page.locator('#panel-frios .carta__item', { hasText: name })).toContainText('Sugerencia');
+    await expect(page.locator('#carta .carta__item')).toHaveCount(47);
+  } finally {
+    await restore();
+    await page.goto('/#carta');
+    await expect(page.locator('#carta [data-suggested]')).not.toContainText(name);
+  }
+});
+
 test('carta: la web muestra los 47 platos de la carta física; crear, editar, ocultar y borrar un plato', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#carta .carta__item')).toHaveCount(47);

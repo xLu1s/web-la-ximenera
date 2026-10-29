@@ -142,7 +142,7 @@ on conflict (carta_key) do update set
   sort_order = excluded.sort_order, visible = excluded.visible, recommended = excluded.recommended,
   recommendation_note = excluded.recommendation_note;
 insert into public.menu_items (category_id, name, description, price, half_price, allergens, sort_order, visible, recommended, recommendation_note, carta_key)
-select c.id, 'Tartar de Atún Rojo sobre Wakame', null, '18,00 €', null, array['pescado']::text[], 12, true, false, null, 'f-tartar-atun'
+select c.id, 'Tartar de Atún Rojo sobre Wakame', null, '18,00 €', null, array['pescado']::text[], 12, true, true, null, 'f-tartar-atun'
 from public.menu_categories c where c.slug = 'frios'
 on conflict (carta_key) do update set
   category_id = excluded.category_id, name = excluded.name, description = excluded.description,
@@ -230,7 +230,7 @@ on conflict (carta_key) do update set
   sort_order = excluded.sort_order, visible = excluded.visible, recommended = excluded.recommended,
   recommendation_note = excluded.recommendation_note;
 insert into public.menu_items (category_id, name, description, price, half_price, allergens, sort_order, visible, recommended, recommendation_note, carta_key)
-select c.id, 'Mejillones al Curry Thai', null, '13,50 €', '8,50 €', array['moluscos']::text[], 8, true, false, null, 'c-curry'
+select c.id, 'Mejillones al Curry Thai', null, '13,50 €', '8,50 €', array['moluscos']::text[], 8, true, true, null, 'c-curry'
 from public.menu_categories c where c.slug = 'calientes'
 on conflict (carta_key) do update set
   category_id = excluded.category_id, name = excluded.name, description = excluded.description,
@@ -286,7 +286,7 @@ on conflict (carta_key) do update set
   sort_order = excluded.sort_order, visible = excluded.visible, recommended = excluded.recommended,
   recommendation_note = excluded.recommendation_note;
 insert into public.menu_items (category_id, name, description, price, half_price, allergens, sort_order, visible, recommended, recommendation_note, carta_key)
-select c.id, 'Solomillo de Vaca a la brasa', null, '24,50 €', null, '{}'::text[], 1, true, false, null, 'p-solomillo'
+select c.id, 'Solomillo de Vaca a la brasa', null, '24,50 €', null, '{}'::text[], 1, true, true, null, 'p-solomillo'
 from public.menu_categories c where c.slug = 'principal'
 on conflict (carta_key) do update set
   category_id = excluded.category_id, name = excluded.name, description = excluded.description,

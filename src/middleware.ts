@@ -34,16 +34,22 @@ export const onRequest = defineMiddleware(async (ctx, next) => {
   const isAdminPage = path === '/admin' || path.startsWith('/admin/');
   const isAdminApi = path.startsWith('/api/admin/');
 
-  const qAdmin = ctx.url.searchParams.get('admin_lang');
-  if (qAdmin === 'es' || qAdmin === 'en' || qAdmin === 'zh') {
+  const rawAdmin = ctx.url.searchParams.get('admin_lang');
+  // El inglés del panel se retiró: admin_lang=en (URL o cookie) se guarda como español.
+  const qAdmin = rawAdmin === 'en' ? 'es' : rawAdmin;
+  const cookieAdmin = ctx.cookies.get('lx_admin_lang')?.value;
+  const normalizedCookie = cookieAdmin === 'en' ? 'es' : cookieAdmin;
+  if (qAdmin === 'es' || qAdmin === 'zh') {
     ctx.cookies.set('lx_admin_lang', qAdmin, cookieOpts);
     if (isAdminPage && ctx.request.method === 'GET') {
       const nextUrl = new URL(ctx.url);
       nextUrl.searchParams.delete('admin_lang');
       return ctx.redirect(nextUrl.pathname + nextUrl.search, 303);
     }
+  } else if (cookieAdmin === 'en') {
+    ctx.cookies.set('lx_admin_lang', 'es', cookieOpts);
   }
-  const storedAdmin = qAdmin === 'es' || qAdmin === 'en' || qAdmin === 'zh' ? qAdmin : ctx.cookies.get('lx_admin_lang')?.value;
+  const storedAdmin = qAdmin === 'es' || qAdmin === 'zh' ? qAdmin : normalizedCookie;
   ctx.locals.adminLang = adminLang(storedAdmin);
 
   if (!isAdminPage && !isAdminApi) return next();
