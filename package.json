@@ -6,9 +6,39 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "build:node": "ASTRO_ADAPTER=node astro build",
+    "preview": "astro preview",
+    "start:node": "node dist/server/entry.mjs",
+    "db:start": "supabase start",
+    "db:reset": "supabase db reset",
+    "seed:generate": "node scripts/generate-seed.mts",
+    "qr:print": "node scripts/generate-qr-mesa.mts",
+    "test": "vitest run",
+    "test:unit": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "test:e2e": "playwright test",
+    "test:backup": "bash scripts/test-backup-restore.sh",
+    "screenshots": "SCREENSHOTS=1 playwright test tests/e2e/screenshots.spec.ts"
   },
   "dependencies": {
-    "astro": "^7.4.2"
+    "@astrojs/node": "^11.1.9",
+    "@astrojs/vercel": "^11.0.16",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.118.0",
+    "astro": "^7.4.2",
+    "resend": "^6.34.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@types/qrcode": "^1.5.6",
+    "qrcode": "^1.5.4",
+    "@types/node": "^26.6.5",
+    "@types/pg": "^8.23.1",
+    "pg": "^8.23.1",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  },
+  "engines": {
+    "node": ">=22.12"
   }
 }

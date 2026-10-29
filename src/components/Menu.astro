@@ -1,27 +1,32 @@
 ---
 import { Image } from 'astro:assets';
-import { menu, allergenLabels, type Allergen } from '../data/menu';
-import { menuDelDia } from '../data/menuDelDia';
-import { instagram, instagramCredit } from '../data/gallery';
+import { type Allergen, type MenuCategoryRow, type SpecialMenuRow } from '../lib/content';
+import { allergenName, publicLang, sectionLabel, t, wineNote } from '../i18n/public';
 // Fotos oficiales del Instagram @laximenera_restaurante (posts en src/data/gallery.ts)
 import ig03 from '../assets/instagram/ig-03.jpg';
 import ig06 from '../assets/instagram/ig-06.jpg';
 import ig01 from '../assets/instagram/ig-01.jpg';
+interface Props { menu: MenuCategoryRow[]; menuDelDia: SpecialMenuRow | null }
+const { menu, menuDelDia } = Astro.props;
+const lang = publicLang(Astro.locals.lang);
 const highlights = [
   { src: ig03, name: 'De nuestras brasas', alt: 'Carne a la brasa con verduras' },
   { src: ig06, name: 'Tartar de atún', alt: 'Tartar de atún con algas' },
   { src: ig01, name: 'Mejillones', alt: 'Cazuela de mejillones' },
 ];
 const usedAllergens = [...new Set(menu.flatMap((s) => s.items.flatMap((i) => i.allergens ?? [])))] as Allergen[];
+const labelOf = (code: string) => allergenName(lang, code);
+const subOf = (s: MenuCategoryRow) => (s.subtitle === 'Para compartir' ? t(lang, 'sec.share') : (s.subtitle ?? ''));
 const count = menu.reduce((n, s) => n + s.items.length, 0);
+const tabId = (s: MenuCategoryRow) => s.slug;
 ---
 <section id="carta" class="section menu" aria-labelledby="menu-title">
   <div class="container">
     <div class="menu__top">
       <div class="section__head reveal">
-        <p class="eyebrow">La carta</p>
-        <h2 id="menu-title">Nuestra <em>carta</em></h2>
-        <p class="section__intro">Producto de mercado, brasa y platos para compartir. {count} propuestas, de los fríos a nuestros postres caseros.</p>
+        <p class="eyebrow">{t(lang, 'menu.eyebrow')}</p>
+        <h2 id="menu-title" set:html={t(lang, 'menu.title')} />
+        <p class="section__intro">{t(lang, 'menu.intro', { n: count })}</p>
       </div>
       <ul class="highlights reveal" role="list" style="--d:.1s">
         {highlights.map((h) => (
@@ -32,20 +37,19 @@ const count = menu.reduce((n, s) => n + s.items.length, 0);
         ))}
       </ul>
     </div>
-    <p class="highlights__credit"><a href={instagram.url} target="_blank" rel="noopener">{instagramCredit}</a></p>
 
-    <div class="tabs reveal" role="tablist" aria-label="Secciones de la carta" data-menu-tabs>
+    <div class="tabs reveal" role="tablist" aria-label={t(lang, 'menu.tabs')} data-menu-tabs>
       {menu.map((s, i) => (
-        <button role="tab" type="button" class="tab" id={`tab-${s.id}`} aria-controls={`panel-${s.id}`} aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1}>{s.tab}</button>
+        <button role="tab" type="button" class="tab" id={`tab-${tabId(s)}`} aria-controls={`panel-${tabId(s)}`} aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1}>{sectionLabel(lang, s.slug, s.tab)}</button>
       ))}
     </div>
 
     <div class="carta reveal">
       {menu.map((s, i) => (
-        <div class="carta__panel" role="tabpanel" id={`panel-${s.id}`} aria-labelledby={`tab-${s.id}`} data-active={i === 0 ? 'true' : 'false'}>
+        <div class="carta__panel" role="tabpanel" id={`panel-${tabId(s)}`} aria-labelledby={`tab-${tabId(s)}`} data-active={i === 0 ? 'true' : 'false'}>
           <header class="carta__head">
-            {s.subtitle && <p class="carta__sub">{s.subtitle}</p>}
-            <h3>{s.title}</h3>
+            {subOf(s) && <p class="carta__sub">{subOf(s)}</p>}
+            <h3>{sectionLabel(lang, s.slug, s.title)}</h3>
             {s.intro && <p class="carta__intro">{s.intro}</p>}
           </header>
           <ul class="carta__list" role="list">
@@ -53,12 +57,15 @@ const count = menu.reduce((n, s) => n + s.items.length, 0);
               <li class="carta__item">
                 <span class="carta__name">
                   {it.name}
-                  {it.allergens?.map((a) => <span class={`alg alg--${a}`} title={allergenLabels[a]}><span class="sr-only">Alérgeno: </span>{allergenLabels[a]}</span>)}
+                  {it.recommended && <span class="sug">{t(lang, 'wines.badge')}</span>}
+                  {it.description && <span class="carta__desc">{it.description}</span>}
+                  {wineNote(lang, it.recommendation_note) && <span class="carta__desc">{wineNote(lang, it.recommendation_note)}</span>}
+                  {it.allergens?.map((a) => <span class={`alg alg--${a}`} title={labelOf(a)}><span class="sr-only">{t(lang, 'menu.allergen')}</span>{labelOf(a)}</span>)}
                 </span>
                 <span class="carta__dots" aria-hidden="true"></span>
                 <span class="carta__price">
-                  {it.half && <span class="carta__half">½ {it.half}</span>}
-                  {it.price ?? <span class="carta__noprice">consultar</span>}
+                  {it.half_price && <span class="carta__half">{t(lang, 'menu.half')} {it.half_price}</span>}
+                  {it.price || <span class="carta__noprice">{t(lang, 'menu.ask')}</span>}
                 </span>
               </li>
             ))}
@@ -67,19 +74,21 @@ const count = menu.reduce((n, s) => n + s.items.length, 0);
         </div>
       ))}
       <p class="carta__legend">
-        <span>Iconos de la carta:</span>
-        {usedAllergens.map((a) => <span class={`alg alg--${a}`}>{allergenLabels[a]}</span>)}
-        <span class="carta__legend-note">½ = media ración · S/M = según mercado · Consulta cualquier alergia o intolerancia con nuestro equipo.</span>
+        <span>{t(lang, 'menu.legend')}</span>
+        {usedAllergens.map((a) => <span class={`alg alg--${a}`}>{labelOf(a)}</span>)}
+        <span class="carta__legend-note">{t(lang, 'menu.legendNote')}</span>
       </p>
     </div>
 
+    {menuDelDia && (
     <div class="menu-day reveal">
       <div class="menu-day__intro">
-        <p class="eyebrow">{menuDelDia.days.replace('Menú de ', '')}</p>
-        <h3>Menú del día</h3>
-        <p class="menu-day__price">{menuDelDia.price.replace('.', ',').replace('€', ' €')}</p>
-        <p class="menu-day__note">{menuDelDia.priceNote}</p>
-        <a class="btn btn--outline" href="#contacto">Reserva tu mesa</a>
+        {menuDelDia.subtitle && <p class="eyebrow">{menuDelDia.subtitle}</p>}
+        <h3>{menuDelDia.title}</h3>
+        {menuDelDia.price && <p class="menu-day__price">{menuDelDia.price}</p>}
+        {menuDelDia.price_note && <p class="menu-day__note">{menuDelDia.price_note}</p>}
+        {menuDelDia.description && <p class="menu-day__note">{menuDelDia.description}</p>}
+        <a class="btn btn--outline" href="#reservar">{t(lang, 'menu.dayCta')}</a>
       </div>
       <div class="menu-day__courses">
         {menuDelDia.courses.map((c) => (
@@ -90,5 +99,6 @@ const count = menu.reduce((n, s) => n + s.items.length, 0);
         ))}
       </div>
     </div>
+    )}
   </div>
 </section>

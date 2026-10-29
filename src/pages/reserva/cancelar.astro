@@ -1,0 +1,65 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+import { serviceClient } from '../../lib/supabase';
+import { env } from '../../lib/env';
+import { verifyCancelToken } from '../../lib/token';
+import { formatDateEs } from '../../lib/time';
+import { publicLang, t } from '../../i18n/public';
+import { customerCancellation, ownerCancellation, sendEmail } from '../../lib/email';
+
+Astro.response.headers.set('Cache-Control', 'no-store');
+const token = Astro.url.searchParams.get('t') ?? '';
+let state: 'invalid' | 'confirm' | 'done' | 'already' | 'past' | 'error' = 'invalid';
+let booking: { reference: string; day: string; booking_time: string; party_size: number; name: string; status: string; starts_at: string } | null = null;
+
+const id = verifyCancelToken(token, env.bookingTokenSecret);
+if (id && env.supabaseServiceRoleKey) {
+  const db = serviceClient();
+  const { data } = await db.from('bookings').select('id, reference, day, booking_time, party_size, name, email, service, status, starts_at').eq('id', id).maybeSingle();
+  if (data) {
+    booking = data;
+    state = data.status === 'cancelada' ? 'already' : new Date(data.starts_at) <= new Date() ? 'past' : 'confirm';
+    if (Astro.request.method === 'POST' && state === 'confirm') {
+      const { data: r, error } = await db.rpc('cancel_booking', { p_id: id, p_by: 'cliente' });
+      if (error) { state = 'error'; console.error('[cancelar]', error.message); }
+      else if (r.ok) {
+        state = 'done';
+        const summary = { reference: r.reference, day: r.day, time: r.time, service: r.service, party_size: r.party_size, name: r.name, email: r.email };
+        await Promise.all([sendEmail(customerCancellation(summary)), sendEmail(ownerCancellation(summary, 'cliente'))]);
+      } else state = r.error === 'already_cancelled' ? 'already' : r.error === 'past' ? 'past' : 'error';
+    }
+  }
+}
+if (state === 'invalid') Astro.response.status = 404;
+const lang = publicLang(Astro.locals.lang);
+const when = booking
+  ? (lang === 'en'
+    ? `${new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(`${booking.day}T12:00:00Z`))} at ${booking.booking_time.slice(0, 5)}`
+    : `${formatDateEs(booking.day)} a las ${booking.booking_time.slice(0, 5)}`)
+  : '';
+const partyLabel = booking ? `${booking.party_size} ${booking.party_size === 1 ? t(lang, 'booking.one') : t(lang, 'booking.many')}` : '';
+---
+<Base title={`${t(lang, 'cancel.title')} · La Ximenera`} description={t(lang, 'cancel.title')} structuredData={false} noindex>
+  <header class="header is-scrolled legal-header"><div class="container header__inner"><a href="/" class="brand"><span>La Ximenera</span></a></div></header>
+  <main id="contenido" class="legal" data-cancel-state={state}>
+    <div class="container">
+      <h1>{t(lang, 'cancel.title')}</h1>
+      {state === 'invalid' && <p class="bk__error" role="alert">{t(lang, 'cancel.invalid')}</p>}
+      {booking && (
+        <p>{t(lang, 'cancel.summary', { ref: booking.reference, when, party: partyLabel, name: booking.name })}</p>
+      )}
+      {state === 'confirm' && (
+        <form method="post">
+          <p>{t(lang, 'cancel.sure')}</p>
+          <button class="btn btn--gold" type="submit">{t(lang, 'cancel.yes')}</button>
+          <a class="btn btn--outline" href="/">{t(lang, 'cancel.no')}</a>
+        </form>
+      )}
+      {state === 'done' && <p class="bk__ok" role="status">{t(lang, 'cancel.done')}</p>}
+      {state === 'already' && <p class="bk__ok" role="status">{t(lang, 'cancel.already')}</p>}
+      {state === 'past' && <p class="bk__error" role="alert">{t(lang, 'cancel.past')}</p>}
+      {state === 'error' && <p class="bk__error" role="alert">{t(lang, 'cancel.error')}</p>}
+    </div>
+  </main>
+</Base>

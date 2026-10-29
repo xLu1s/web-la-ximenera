@@ -1,0 +1,141 @@
+---
+export const prerender = false;
+import Admin from '../../layouts/Admin.astro';
+import { ALLERGENS } from '../../lib/content';
+import { dbErrorMessage, faction, fbool, fid, fint, fnull, fstr, redirectWith } from '../../lib/admin';
+import { slugify, validateCategory, validateMenuItem } from '../../lib/validate';
+import { adminLang, allergenAdmin, ta } from '../../i18n/admin';
+
+const lang = adminLang(Astro.locals.adminLang);
+const sb = Astro.locals.supabase;
+const back = (anchor = '') => `/admin/carta${anchor}`;
+
+if (Astro.request.method === 'POST') {
+  const fd = await Astro.request.formData();
+  const action = faction(fd);
+  const itemFrom = () => validateMenuItem({
+    name: fstr(fd, 'name'), description: fnull(fd, 'description'), price: fnull(fd, 'price'), half_price: fnull(fd, 'half_price'),
+    allergens: fd.getAll('allergens').map(String), sort_order: fint(fd, 'sort_order'), visible: fbool(fd, 'visible'),
+    recommended: fbool(fd, 'recommended'), recommendation_note: fnull(fd, 'recommendation_note'),
+  });
+  const catFrom = () => validateCategory({
+    tab: fstr(fd, 'tab'), title: fstr(fd, 'title'), subtitle: fnull(fd, 'subtitle'), intro: fnull(fd, 'intro'), notes: fstr(fd, 'notes'),
+    sort_order: fint(fd, 'sort_order'), visible: fbool(fd, 'visible'),
+  });
+  if (action === 'item_save' || action === 'item_create') {
+    const v = itemFrom();
+    if (!v.ok) return redirectWith(back(), v.error, 'err');
+    const catId = fid(fd, 'category_id');
+    const q = action === 'item_create'
+      ? sb.from('menu_items').insert({ ...v.value, category_id: catId }).select('id').single()
+      : sb.from('menu_items').update(v.value).eq('id', fid(fd)!).select('id').single();
+    const { data, error } = await q;
+    if (error || !data) return redirectWith(back(), dbErrorMessage(error), 'err');
+    return redirectWith(back(`#item-${data.id}`), action === 'item_create' ? ta(lang, 'carta.added', { name: v.value.name }) : ta(lang, 'carta.saved', { name: v.value.name }));
+  }
+  if (action === 'item_delete') {
+    const { error, count } = await sb.from('menu_items').delete({ count: 'exact' }).eq('id', fid(fd)!);
+    if (error || !count) return redirectWith(back(), dbErrorMessage(error), 'err');
+    return redirectWith(back(), ta(lang, 'carta.deleted'));
+  }
+  if (action === 'cat_save' || action === 'cat_create') {
+    const v = catFrom();
+    if (!v.ok) return redirectWith(back(), v.error, 'err');
+    const q = action === 'cat_create'
+      ? sb.from('menu_categories').insert({ ...v.value, slug: `${slugify(v.value.tab)}-${Date.now().toString(36).slice(-4)}` }).select('id').single()
+      : sb.from('menu_categories').update(v.value).eq('id', fid(fd)!).select('id').single();
+    const { data, error } = await q;
+    if (error || !data) return redirectWith(back(), dbErrorMessage(error), 'err');
+    return redirectWith(back(`#cat-${data.id}`), ta(lang, 'carta.sectionSaved', { name: v.value.title }));
+  }
+  if (action === 'cat_delete') {
+    const { error, count } = await sb.from('menu_categories').delete({ count: 'exact' }).eq('id', fid(fd)!);
+    if (error || !count) return redirectWith(back(), dbErrorMessage(error), 'err');
+    return redirectWith(back(), ta(lang, 'carta.sectionDeleted'));
+  }
+  return redirectWith(back(), ta(lang, 'unknown'), 'err');
+}
+
+const [cats, items] = await Promise.all([
+  sb.from('menu_categories').select('*').order('sort_order').order('id'),
+  sb.from('menu_items').select('*').order('sort_order').order('id'),
+]);
+const categories = (cats.data ?? []).map((c) => ({ ...c, items: (items.data ?? []).filter((i) => i.category_id === c.id) }));
+const allergenEntries = Object.keys(ALLERGENS);
+const nextOrder = (rows: { sort_order: number }[]) => rows.reduce((m, r) => Math.max(m, r.sort_order), 0) + 1;
+---
+<Admin title={ta(lang, 'carta.title')} section="carta">
+  <p class="help">{ta(lang, 'carta.help')}</p>
+  {categories.map((c) => (
+    <details class="card" id={`cat-${c.id}`} data-category={c.slug} open={categories.length <= 1}>
+      <summary><strong>{c.title}</strong> <span class="badge">{ta(lang, 'carta.count', { n: c.items.length })}</span> {!c.visible && <span class="badge badge--warn">{ta(lang, 'hidden')}</span>}</summary>
+      <form method="post" class="grid" style="margin-top:.8rem">
+        <input type="hidden" name="action" value="cat_save" /><input type="hidden" name="id" value={c.id} />
+        <label class="f">{ta(lang, 'carta.tab')} <input name="tab" value={c.tab} maxlength="40" required /></label>
+        <label class="f">{ta(lang, 'title')} <input name="title" value={c.title} maxlength="120" required /></label>
+        <label class="f">{ta(lang, 'subtitle')} <input name="subtitle" value={c.subtitle ?? ''} maxlength="120" /></label>
+        <label class="f">{ta(lang, 'order')} <input type="number" name="sort_order" min="1" value={c.sort_order} /></label>
+        <label class="f f--wide">{ta(lang, 'carta.intro')} <textarea name="intro" maxlength="600">{c.intro ?? ''}</textarea></label>
+        <label class="f f--wide">{ta(lang, 'carta.notes')} <textarea name="notes">{(c.notes ?? []).join('\n')}</textarea></label>
+        <label class="f--check"><input type="checkbox" name="visible" checked={c.visible} /> {ta(lang, 'visible')}</label>
+        <div class="actions f--wide">
+          <button class="btn btn--small" type="submit">{ta(lang, 'carta.saveSection')}</button>
+          <button class="btn btn--danger btn--small" type="submit" name="action" value="cat_delete" data-confirm={ta(lang, 'carta.confirmSection', { name: c.title })}>{ta(lang, 'carta.deleteSection')}</button>
+        </div>
+      </form>
+      <h3 style="margin-top:1rem">{ta(lang, 'carta.dishes')}</h3>
+      <div class="items">
+        {c.items.map((it) => (
+          <form method="post" class:list={['item', { 'item--hidden': !it.visible }]} id={`item-${it.id}`} data-item={it.name}>
+            <input type="hidden" name="action" value="item_save" /><input type="hidden" name="id" value={it.id} />
+            <div class="grid">
+              <label class="f f--wide">{ta(lang, 'name')} <input name="name" value={it.name} maxlength="200" required /></label>
+              <label class="f f--wide">{ta(lang, 'desc')} <input name="description" value={it.description ?? ''} maxlength="600" /></label>
+              <label class="f">{ta(lang, 'price')} <input name="price" value={it.price ?? ''} maxlength="40" /></label>
+              <label class="f">{ta(lang, 'carta.half')} <input name="half_price" value={it.half_price ?? ''} maxlength="40" /></label>
+              <label class="f">{ta(lang, 'order')} <input type="number" name="sort_order" min="1" value={it.sort_order} /></label>
+              <label class="f--check"><input type="checkbox" name="visible" checked={it.visible} /> {ta(lang, 'visible')}</label>
+              <label class="f--check"><input type="checkbox" name="recommended" checked={!!it.recommended} /> {ta(lang, 'recommended')}</label>
+              <label class="f f--wide">{ta(lang, 'recNote')} <input name="recommendation_note" value={it.recommendation_note ?? ''} maxlength="200" /></label>
+            </div>
+            <fieldset class="allergens" style="border:0;padding:0;margin:.5rem 0 0"><legend class="help">{ta(lang, 'carta.allergens')}</legend>
+              {allergenEntries.map((k) => <label><input type="checkbox" name="allergens" value={k} checked={it.allergens.includes(k)} /> {allergenAdmin(lang, k)}</label>)}
+            </fieldset>
+            <div class="actions">
+              <button class="btn btn--small" type="submit">{ta(lang, 'save')}</button>
+              <button class="btn btn--danger btn--small" type="submit" name="action" value="item_delete" data-confirm={ta(lang, 'carta.confirmDish', { name: it.name })}>{ta(lang, 'delete')}</button>
+            </div>
+          </form>
+        ))}
+        <form method="post" class="item card--muted" data-new-item>
+          <input type="hidden" name="action" value="item_create" /><input type="hidden" name="category_id" value={c.id} />
+          <h3>{ta(lang, 'carta.addTo', { name: c.title })}</h3>
+          <div class="grid">
+            <label class="f f--wide">{ta(lang, 'name')} <input name="name" maxlength="200" required /></label>
+            <label class="f f--wide">{ta(lang, 'desc')} <input name="description" maxlength="600" /></label>
+            <label class="f">{ta(lang, 'price')} <input name="price" maxlength="40" placeholder="12,90 €" /></label>
+            <label class="f">{ta(lang, 'carta.half')} <input name="half_price" maxlength="40" /></label>
+            <label class="f">{ta(lang, 'order')} <input type="number" name="sort_order" min="1" value={nextOrder(c.items)} /></label>
+            <label class="f--check"><input type="checkbox" name="visible" checked /> {ta(lang, 'visible')}</label>
+            <label class="f--check"><input type="checkbox" name="recommended" /> {ta(lang, 'recommended')}</label>
+            <label class="f f--wide">{ta(lang, 'recNote')} <input name="recommendation_note" maxlength="200" /></label>
+          </div>
+          <fieldset class="allergens" style="border:0;padding:0;margin:.5rem 0 0"><legend class="help">{ta(lang, 'carta.allergens')}</legend>
+            {allergenEntries.map((k) => <label><input type="checkbox" name="allergens" value={k} /> {allergenAdmin(lang, k)}</label>)}
+          </fieldset>
+          <div class="actions"><button class="btn btn--small" type="submit">{ta(lang, 'carta.add')}</button></div>
+        </form>
+      </div>
+    </details>
+  ))}
+  <form method="post" class="card grid" data-new-category>
+    <h2 class="f--wide" style="margin:0">{ta(lang, 'carta.new')}</h2>
+    <input type="hidden" name="action" value="cat_create" />
+    <label class="f">{ta(lang, 'carta.tab')} <input name="tab" maxlength="40" placeholder="Arroces" /></label>
+    <label class="f">{ta(lang, 'title')} <input name="title" maxlength="120" required /></label>
+    <label class="f">{ta(lang, 'subtitle')} <input name="subtitle" maxlength="120" /></label>
+    <label class="f">{ta(lang, 'order')} <input type="number" name="sort_order" min="1" value={nextOrder(categories)} /></label>
+    <input type="hidden" name="visible" value="on" />
+    <div class="actions f--wide"><button class="btn" type="submit">{ta(lang, 'carta.create')}</button></div>
+  </form>
+</Admin>

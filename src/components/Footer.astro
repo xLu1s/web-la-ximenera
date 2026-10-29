@@ -1,14 +1,16 @@
 ---
 import { site } from '../data/site';
 import { publicUrl } from '../lib/base';
+import { publicLang, t } from '../i18n/public';
 const year = new Date().getFullYear();
+const lang = publicLang(Astro.locals.lang);
 ---
 <footer class="footer">
   <div class="container footer__inner">
     <div class="brand brand--footer"><img src={publicUrl('logo.svg')} alt="" width="32" height="32" /><span>La Ximenera</span></div>
-    <p>{site.address.street}, {site.address.postalCode} {site.address.city}, {site.address.region} · <a href={`tel:${site.phoneE164}`}>{site.phoneDisplay}</a> · <a href={site.whatsapp} target="_blank" rel="noopener">WhatsApp</a></p>
+    <p>{site.address.street}, {site.address.postalCode} {site.address.city}, {site.address.region}</p>
     <p class="footer__social"><a href={site.instagram} target="_blank" rel="noopener">Instagram @laximenera_restaurante</a> · <a href={site.facebook} target="_blank" rel="noopener">Facebook</a></p>
-    <p class="footer__small">© {year} La Ximenera · Restaurante en Alcoi · <a href="#">[Aviso legal y privacidad por confirmar]</a></p>
-    <p class="footer__small">Web de demostración. Fotos de @laximenera_restaurante y, marcadas como provisionales, fotos públicas de clientes. Los datos entre corchetes están pendientes de confirmar.</p>
+    <p class="footer__small">© {year} La Ximenera · {t(lang, 'footer.city')} · <a href="/aviso-legal">{t(lang, 'footer.legal')}</a> · <a href="/privacidad">{t(lang, 'footer.privacy')}</a> · <a href="/cookies">{t(lang, 'footer.cookies')}</a></p>
+    <p class="footer__small">{t(lang, 'footer.demo')}</p>
   </div>
 </footer>

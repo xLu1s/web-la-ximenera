@@ -1,0 +1,110 @@
+---
+import { WINE_SECTION_ORDER, formatEuro, type DenominacionRow, type WineRow } from '../lib/content';
+import { publicLang, t, wineNote, wineSectionLabel } from '../i18n/public';
+interface Props { wines: WineRow[]; denominaciones?: DenominacionRow[] }
+const lang = publicLang(Astro.locals.lang);
+const wines = Astro.props.wines.filter((w) => w.visible);
+const catalog = Astro.props.denominaciones ?? [];
+const present = [...new Set(wines.map((w) => w.denominacion_origen).filter((d): d is string => !!d))];
+const known = new Set(catalog.map((d) => d.name));
+const dos = [
+  ...catalog.filter((d) => present.includes(d.name)).map((d) => d.name),
+  ...present.filter((n) => !known.has(n)).sort((a, b) => a.localeCompare(b, 'es')),
+];
+const groups = [...WINE_SECTION_ORDER, 'otro']
+  .map((section) => ({ section, items: wines.filter((w) => (w.section || 'otro') === section) }))
+  .filter((g) => g.items.length > 0);
+const soon = t(lang, 'wines.soon');
+---
+<section id="vinos" class="section wines" aria-labelledby="wines-title" data-wines={wines.length > 0 ? 'list' : 'provisional'}>
+  <div class="container">
+    <div class="section__head reveal">
+      <p class="eyebrow">{t(lang, 'wines.eyebrow')}</p>
+      <h2 id="wines-title" set:html={t(lang, 'wines.title')} />
+    </div>
+    {wines.length === 0 ? (
+      <div class="wines__soon reveal" data-wines-provisional>
+        <p class="wines__soon-text">{soon}</p>
+        <p class="wines__soon-sub">{t(lang, 'wines.soonSub')}</p>
+      </div>
+    ) : (
+      <div data-wine-board>
+        {dos.length > 0 && (
+          <div class="do-filter reveal">
+            <label class="do-filter__label" for="do-select">{t(lang, 'wines.filter')}</label>
+            <select id="do-select" data-do-select>
+              <option value="">{t(lang, 'wines.all')}</option>
+              {dos.map((d) => <option value={d}>{d}</option>)}
+            </select>
+            <div class="do-chips" role="group" aria-label={t(lang, 'wines.filter')}>
+              <button type="button" class="do-chip is-on" data-do="">{t(lang, 'wines.all')}</button>
+              {dos.map((d) => <button type="button" class="do-chip" data-do={d}>{d}</button>)}
+            </div>
+          </div>
+        )}
+        <p class="wines__empty" data-wine-empty hidden>{t(lang, 'wines.emptyFilter')}</p>
+        <div class="wines__card reveal">
+          {groups.map((g) => (
+            <div class="wines__group" data-wine-group>
+              <h3>{wineSectionLabel(lang, g.section)}</h3>
+              <ul class="wines__list" role="list">
+                {g.items.map((w) => (
+                  <li class="wines__item" data-wine={w.name} data-do={w.denominacion_origen ?? ''}>
+                    <span class="wines__name">
+                      {w.name}
+                      {w.recommended && <span class="sug">{t(lang, 'wines.badge')}</span>}
+                      {w.denominacion_origen && <span class="wines__origin">{w.denominacion_origen}</span>}
+                      {w.origin && <span class="wines__origin">{w.origin}</span>}
+                      {w.description && <span class="wines__desc">{w.description}</span>}
+                      {wineNote(lang, w.recommendation_note) && <span class="wines__desc">{wineNote(lang, w.recommendation_note)}</span>}
+                    </span>
+                    <span class="carta__dots" aria-hidden="true"></span>
+                    <span class="wines__price">
+                      {w.price_glass != null && <span class="wines__glass">{t(lang, 'wines.glass')} {formatEuro(w.price_glass)}</span>}
+                      {w.price_bottle != null ? <span>{t(lang, 'wines.bottle')} {formatEuro(w.price_bottle)}</span> : (w.price_glass == null && <span class="carta__noprice">{t(lang, 'wines.ask')}</span>)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+</section>
+<script>
+  const board = document.querySelector('[data-wine-board]');
+  if (board) {
+    const select = board.querySelector<HTMLSelectElement>('[data-do-select]');
+    const chips = [...board.querySelectorAll<HTMLButtonElement>('[data-do]')];
+    const items = [...board.querySelectorAll<HTMLElement>('[data-wine]')];
+    const groups = [...board.querySelectorAll<HTMLElement>('[data-wine-group]')];
+    const empty = board.querySelector<HTMLElement>('[data-wine-empty]');
+    const apply = (value: string) => {
+      chips.forEach((c) => c.classList.toggle('is-on', (c.dataset.do ?? '') === value));
+      if (select && select.value !== value) select.value = value;
+      let shown = 0;
+      for (const item of items) {
+        const ok = !value || item.dataset.do === value;
+        item.hidden = !ok;
+        if (ok) shown++;
+      }
+      for (const g of groups) g.hidden = ![...g.querySelectorAll<HTMLElement>('[data-wine]')].some((i) => !i.hidden);
+      if (empty) empty.hidden = shown > 0;
+    };
+    select?.addEventListener('change', () => apply(select.value));
+    chips.forEach((c) => c.addEventListener('click', () => apply(c.dataset.do ?? '')));
+  }
+</script>
+<style is:global>
+  .sug { display: inline-block; margin-left: .35rem; padding: .05rem .45rem; border-radius: 999px; background: var(--gold); color: var(--espresso); font-family: var(--font-body); font-size: .68rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; vertical-align: middle; }
+  .do-filter { margin-top: 1.4rem; display: grid; gap: .7rem; }
+  .do-filter__label { font-size: .78rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--gold-dark); }
+  .do-filter select { width: 100%; max-width: 28rem; min-height: 44px; padding: .55rem .7rem; font: inherit; color: var(--espresso); background: #fffaf2; border: 1px solid rgb(166 123 91 / .55); border-radius: 4px; }
+  .do-chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+  .do-chip { min-height: 36px; padding: .35rem .7rem; border-radius: 999px; border: 1px solid rgb(166 123 91 / .55); background: transparent; color: var(--walnut); font: inherit; font-size: .82rem; cursor: pointer; }
+  .do-chip.is-on { background: var(--espresso); color: var(--cream); border-color: var(--espresso); }
+  .wines__empty { margin-top: 1rem; color: var(--muted); }
+  .wines__item[hidden], .wines__group[hidden] { display: none; }
+</style>

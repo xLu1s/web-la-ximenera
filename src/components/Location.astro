@@ -1,19 +1,25 @@
 ---
 import { site } from '../data/site';
+import { publicLang, t } from '../i18n/public';
+const lang = publicLang(Astro.locals.lang);
 ---
 <section id="ubicacion" class="section location" aria-labelledby="location-title">
   <div class="container location__grid reveal">
     <div>
-      <p class="eyebrow">Ubicación</p>
-      <h2 id="location-title">Te esperamos <em>en Alcoi</em></h2>
+      <p class="eyebrow">{t(lang, 'location.eyebrow')}</p>
+      <h2 id="location-title" set:html={t(lang, 'location.title')} />
       <address>
         {site.address.street}<br />{site.address.postalCode} {site.address.city}<br />{site.address.region}
       </address>
-      <p class="location__note">Rooftop con terraza exterior, en el ático.</p>
-      <a class="btn" href={site.mapsLink} target="_blank" rel="noopener">Abrir en Google Maps</a>
+      <p class="location__note">{t(lang, 'location.note')}</p>
+      <a class="btn" href={site.mapsLink} target="_blank" rel="noopener">{t(lang, 'location.maps')}</a>
     </div>
-    <div class="map">
-      <iframe title="Mapa: La Ximenera - Rooftop, C/ Regiment Biscaia 2, Ático, Alcoy" src={site.mapsEmbed} loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+    <div class="map" data-map data-src={site.mapsEmbed}>
+      <div class="map__consent" data-map-consent>
+        <p>{t(lang, 'location.consent')}</p>
+        <button type="button" class="btn btn--small map__btn" data-map-load>{t(lang, 'location.show')}</button>
+        <p class="map__small"><a href="/cookies">{t(lang, 'location.cookies')}</a></p>
+      </div>
     </div>
   </div>
 </section>

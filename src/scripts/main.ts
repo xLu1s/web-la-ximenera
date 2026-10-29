@@ -13,6 +13,19 @@ nav?.querySelectorAll('a').forEach((a) =>
   }),
 );
 
+// El idioma conserva el ancla (#carta, #vinos…) para que el enlace siga siendo compartible.
+document.querySelectorAll<HTMLAnchorElement>('[data-lang-link]').forEach((a) => {
+  a.addEventListener('click', (e) => {
+    const code = a.dataset.langLink;
+    if (code !== 'es' && code !== 'en') return;
+    e.preventDefault();
+    const url = new URL(location.href);
+    url.searchParams.set('lang', code);
+    url.hash = location.hash;
+    location.href = url.pathname + url.search + url.hash;
+  });
+});
+
 // Cabecera sólida al hacer scroll
 const header = document.querySelector('[data-header]');
 const onScroll = () => header?.classList.toggle('is-scrolled', window.scrollY > 40);
@@ -122,15 +135,36 @@ if (rv) {
     x0 = null;
   });
   // Leer más
+  const moreLabel = rv.dataset.more || 'Leer más';
+  const lessLabel = rv.dataset.less || 'Leer menos';
   rv.querySelectorAll<HTMLButtonElement>('[data-rv-more]').forEach((b) => b.addEventListener('click', () => {
-    const t = document.getElementById(b.getAttribute('aria-controls')!);
+    const text = document.getElementById(b.getAttribute('aria-controls')!);
     const open = b.getAttribute('aria-expanded') === 'true';
     b.setAttribute('aria-expanded', String(!open));
-    b.textContent = open ? 'Leer más' : 'Leer menos';
-    t?.classList.toggle('is-open', !open);
+    b.textContent = open ? moreLabel : lessLabel;
+    text?.classList.toggle('is-open', !open);
     stop();
   }));
   window.addEventListener('resize', () => go(Math.min(idx, maxIdx())));
   go(0);
   start();
 }
+
+// Mapa de Google: solo se carga si el visitante lo pide (Google puede instalar cookies).
+const map = document.querySelector<HTMLElement>('[data-map]');
+const loadMap = () => {
+  if (!map || map.querySelector('iframe')) return;
+  const f = document.createElement('iframe');
+  f.title = 'Mapa: La Ximenera - Rooftop, C/ Regiment Biscaia 2, Ático, Alcoy';
+  f.src = map.dataset.src!;
+  f.loading = 'lazy';
+  f.referrerPolicy = 'no-referrer-when-downgrade';
+  f.allowFullscreen = true;
+  map.querySelector('[data-map-consent]')?.remove();
+  map.append(f);
+};
+map?.querySelector('[data-map-load]')?.addEventListener('click', () => {
+  try { localStorage.setItem('lx-maps-ok', '1'); } catch { /* sin almacenamiento */ }
+  loadMap();
+});
+try { if (localStorage.getItem('lx-maps-ok') === '1') loadMap(); } catch { /* sin almacenamiento */ }

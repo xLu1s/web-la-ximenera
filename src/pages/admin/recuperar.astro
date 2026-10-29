@@ -1,0 +1,30 @@
+---
+export const prerender = false;
+import Admin from '../../layouts/Admin.astro';
+import { env } from '../../lib/env';
+import { adminLang, ta } from '../../i18n/admin';
+const lang = adminLang(Astro.locals.adminLang);
+let sent = false;
+if (Astro.request.method === 'POST') {
+  const fd = await Astro.request.formData();
+  const email = String(fd.get('email') ?? '').trim();
+  const origin = env.siteUrl || Astro.url.origin;
+  if (email) {
+    const { error } = await Astro.locals.supabase.auth.resetPasswordForEmail(email, { redirectTo: `${origin}/admin/nueva-clave` });
+    if (error) console.error('[recuperar]', error.message);
+  }
+  sent = true; // Mismo mensaje exista o no la cuenta.
+}
+---
+<Admin title={ta(lang, 'recover.title')} bare>
+  {sent ? (
+    <p class="adm__flash adm__flash--ok" role="status">{ta(lang, 'recover.sent')}</p>
+  ) : (
+    <form method="post" class="card">
+      <p class="help">{ta(lang, 'recover.help')}</p>
+      <label class="f">{ta(lang, 'email')} <input type="email" name="email" required autocomplete="username" /></label>
+      <button class="btn" type="submit" style="width:100%;margin-top:1rem">{ta(lang, 'recover.send')}</button>
+    </form>
+  )}
+  <p class="help"><a href="/admin/login">{ta(lang, 'recover.back')}</a></p>
+</Admin>

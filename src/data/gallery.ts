@@ -19,4 +19,3 @@ export const instagramMeta: Record<string, { alt: string; post: string }> = {
   'ig-06.jpg': { alt: 'Tartar de atún con algas', post: 'https://www.instagram.com/p/Dco239wxU2v/' },
   'ig-07.jpg': { alt: 'Tartar de carne con yema de huevo', post: 'https://www.instagram.com/p/Dbff1ReoXAb/' },
 };
-export const instagramCredit = 'Foto: @laximenera_restaurante';
