@@ -49,7 +49,31 @@ test.describe('Carta pública e idioma', () => {
     await expect(page.locator('#vinos [data-wine="Gurgu, jove de trellat"] .sug')).toHaveCount(0);
 
     await expect(page.locator('#vinos .do-chip, #vinos .do-chips')).toHaveCount(0);
-    await expect(page.locator('#vinos [data-do-select]')).toBeVisible();
+    await expect(page.locator('#vinos [data-do-select] option')).toHaveText([
+      'Todas las D.O.',
+      'DOCa Rioja',
+      'DO Cava',
+      'DO Rueda',
+      'DO Ribera del Duero',
+      'DO Rías Baixas',
+      'DO Toro',
+      'DOC Priorat',
+      'DO Bierzo',
+      'DO Jumilla',
+      'DO Utiel-Requena',
+      'DO Valencia',
+      'DO Alicante',
+      'DO Valdeorras',
+      'DO Ribeira Sacra',
+      'DO Montsant',
+      'Champagne',
+      'VT Castilla y León',
+      'Pago Chozas Carrascal',
+      'Vino de Pago El Terrerazo',
+      'DO Lanzarote',
+      'Vino de España',
+      'Amarone della Valpolicella',
+    ]);
 
     await page.locator('#vinos [data-do-select]').selectOption('DO Alicante');
     await expect(page.locator('#vinos [data-wine="Gurgu, jove de trellat"]')).toBeVisible();

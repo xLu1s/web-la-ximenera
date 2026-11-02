@@ -122,30 +122,30 @@ export const menu: MenuSection[] = [
 
 export interface Denominacion { slug: string; name: string }
 
-/** Catálogo normalizado de denominaciones (orden de la carta). */
+/** Catálogo de denominaciones. El orden es el del filtro público (popularidad de ventas en España). */
 export const denominaciones: Denominacion[] = [
-  { slug: 'do-alicante', name: 'DO Alicante' },
-  { slug: 'do-valencia', name: 'DO Valencia' },
-  { slug: 'do-utiel-requena', name: 'DO Utiel-Requena' },
-  { slug: 'do-ribera-del-duero', name: 'DO Ribera del Duero' },
   { slug: 'doca-rioja', name: 'DOCa Rioja' },
-  { slug: 'do-jumilla', name: 'DO Jumilla' },
-  { slug: 'do-toro', name: 'DO Toro' },
-  { slug: 'do-rueda', name: 'DO Rueda' },
-  { slug: 'do-rias-baixas', name: 'DO Rías Baixas' },
-  { slug: 'do-valdeorras', name: 'DO Valdeorras' },
-  { slug: 'do-bierzo', name: 'DO Bierzo' },
   { slug: 'do-cava', name: 'DO Cava' },
-  { slug: 'champagne', name: 'Champagne' },
-  { slug: 'do-lanzarote', name: 'DO Lanzarote' },
-  { slug: 'do-ribeira-sacra', name: 'DO Ribeira Sacra' },
+  { slug: 'do-rueda', name: 'DO Rueda' },
+  { slug: 'do-ribera-del-duero', name: 'DO Ribera del Duero' },
+  { slug: 'do-rias-baixas', name: 'DO Rías Baixas' },
+  { slug: 'do-toro', name: 'DO Toro' },
   { slug: 'doc-priorat', name: 'DOC Priorat' },
+  { slug: 'do-bierzo', name: 'DO Bierzo' },
+  { slug: 'do-jumilla', name: 'DO Jumilla' },
+  { slug: 'do-utiel-requena', name: 'DO Utiel-Requena' },
+  { slug: 'do-valencia', name: 'DO Valencia' },
+  { slug: 'do-alicante', name: 'DO Alicante' },
+  { slug: 'do-valdeorras', name: 'DO Valdeorras' },
+  { slug: 'do-ribeira-sacra', name: 'DO Ribeira Sacra' },
   { slug: 'do-montsant', name: 'DO Montsant' },
-  { slug: 'pago-chozas-carrascal', name: 'Pago Chozas Carrascal' },
-  { slug: 'vino-de-espana', name: 'Vino de España' },
+  { slug: 'champagne', name: 'Champagne' },
   { slug: 'vt-castilla-y-leon', name: 'VT Castilla y León' },
-  { slug: 'amarone-della-valpolicella', name: 'Amarone della Valpolicella' },
+  { slug: 'pago-chozas-carrascal', name: 'Pago Chozas Carrascal' },
   { slug: 'vino-de-pago-el-terrerazo', name: 'Vino de Pago El Terrerazo' },
+  { slug: 'do-lanzarote', name: 'DO Lanzarote' },
+  { slug: 'vino-de-espana', name: 'Vino de España' },
+  { slug: 'amarone-della-valpolicella', name: 'Amarone della Valpolicella' },
 ];
 
 export type WineType = 'tinto' | 'blanco' | 'rosado' | 'espumoso' | 'generoso' | 'dulce' | 'otro';
