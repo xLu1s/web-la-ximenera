@@ -36,10 +36,6 @@ const soon = t(lang, 'wines.soon');
               <option value="">{t(lang, 'wines.all')}</option>
               {dos.map((d) => <option value={d}>{d}</option>)}
             </select>
-            <div class="do-chips" role="group" aria-label={t(lang, 'wines.filter')}>
-              <button type="button" class="do-chip is-on" data-do="">{t(lang, 'wines.all')}</button>
-              {dos.map((d) => <button type="button" class="do-chip" data-do={d}>{d}</button>)}
-            </div>
           </div>
         )}
         <p class="wines__empty" data-wine-empty hidden>{t(lang, 'wines.emptyFilter')}</p>
@@ -77,13 +73,10 @@ const soon = t(lang, 'wines.soon');
   const board = document.querySelector('[data-wine-board]');
   if (board) {
     const select = board.querySelector<HTMLSelectElement>('[data-do-select]');
-    const chips = [...board.querySelectorAll<HTMLButtonElement>('[data-do]')];
     const items = [...board.querySelectorAll<HTMLElement>('[data-wine]')];
     const groups = [...board.querySelectorAll<HTMLElement>('[data-wine-group]')];
     const empty = board.querySelector<HTMLElement>('[data-wine-empty]');
     const apply = (value: string) => {
-      chips.forEach((c) => c.classList.toggle('is-on', (c.dataset.do ?? '') === value));
-      if (select && select.value !== value) select.value = value;
       let shown = 0;
       for (const item of items) {
         const ok = !value || item.dataset.do === value;
@@ -94,7 +87,6 @@ const soon = t(lang, 'wines.soon');
       if (empty) empty.hidden = shown > 0;
     };
     select?.addEventListener('change', () => apply(select.value));
-    chips.forEach((c) => c.addEventListener('click', () => apply(c.dataset.do ?? '')));
   }
 </script>
 <style is:global>
@@ -102,9 +94,6 @@ const soon = t(lang, 'wines.soon');
   .do-filter { margin-top: 1.4rem; display: grid; gap: .7rem; }
   .do-filter__label { font-size: .78rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--gold-dark); }
   .do-filter select { width: 100%; max-width: 28rem; min-height: 44px; padding: .55rem .7rem; font: inherit; color: var(--espresso); background: #fffaf2; border: 1px solid rgb(166 123 91 / .55); border-radius: 4px; }
-  .do-chips { display: flex; flex-wrap: wrap; gap: .4rem; }
-  .do-chip { min-height: 36px; padding: .35rem .7rem; border-radius: 999px; border: 1px solid rgb(166 123 91 / .55); background: transparent; color: var(--walnut); font: inherit; font-size: .82rem; cursor: pointer; }
-  .do-chip.is-on { background: var(--espresso); color: var(--cream); border-color: var(--espresso); }
   .wines__empty { margin-top: 1rem; color: var(--muted); }
   .wines__item[hidden], .wines__group[hidden] { display: none; }
 </style>

@@ -10,6 +10,13 @@ describe('carta física oct 2026', () => {
     expect(menu.map((s) => s.id)).toEqual(['frios', 'calientes', 'principal', 'postres']);
     expect(vinos).toHaveLength(71);
     expect(denominaciones).toHaveLength(22);
+    expect(denominaciones.map((d) => d.slug)).toEqual([
+      'doca-rioja', 'do-cava', 'do-rueda', 'do-ribera-del-duero', 'do-rias-baixas',
+      'do-toro', 'doc-priorat', 'do-bierzo', 'do-jumilla', 'do-utiel-requena',
+      'do-valencia', 'do-alicante', 'do-valdeorras', 'do-ribeira-sacra', 'do-montsant',
+      'champagne', 'vt-castilla-y-leon', 'pago-chozas-carrascal', 'vino-de-pago-el-terrerazo',
+      'do-lanzarote', 'vino-de-espana', 'amarone-della-valpolicella',
+    ]);
     const names = new Set(denominaciones.map((d) => d.name));
     for (const w of vinos) {
       if (w.denominacion) expect(names.has(w.denominacion)).toBe(true);
