@@ -39,7 +39,8 @@ const soon = t(lang, 'wines.soon');
           </div>
         )}
         <p class="wines__empty" data-wine-empty hidden>{t(lang, 'wines.emptyFilter')}</p>
-        <div class="wines__card reveal">
+        <!-- Sin .reveal: en móvil la carta es más alta que la pantalla y el umbral 0.12 del observer nunca se cumple (se queda en opacity: 0). -->
+        <div class="wines__card">
           {groups.map((g) => (
             <div class="wines__group" data-wine-group>
               <h3>{wineSectionLabel(lang, g.section)}</h3>

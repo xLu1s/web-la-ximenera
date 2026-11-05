@@ -89,6 +89,40 @@ test.describe('Carta pública e idioma', () => {
     await expect(page.locator('#vinos [data-wine-group]').filter({ has: page.getByRole('heading', { name: 'Vinos jóvenes', exact: true }) })).toBeHidden();
   });
 
+  test('en móvil, «Todas las D.O.» muestra la carta al entrar y al volver de una D.O. corta', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const card = page.locator('#vinos .wines__card');
+    const select = page.locator('#vinos [data-do-select]');
+    const wines = page.locator('#vinos [data-wine]');
+
+    await page.goto('/#vinos');
+    await expect(select).toHaveValue('');
+    await expect(card).toHaveCSS('opacity', '1', { timeout: 500 });
+    await expect(card).not.toHaveClass(/\breveal\b/);
+    const total = await wines.count();
+    expect(total).toBeGreaterThan(40);
+    await expect(page.locator('#vinos [data-wine][hidden]')).toHaveCount(0);
+    await expect(wines.first()).toBeInViewport();
+
+    await page.goto('/');
+    await page.locator('#vinos .wines__card').evaluate((el) => el.scrollIntoView({ block: 'start', behavior: 'instant' }));
+    await expect(select).toHaveValue('');
+    await expect(card).toHaveCSS('opacity', '1', { timeout: 500 });
+    await expect(wines.first()).toBeInViewport();
+
+    await select.selectOption('DO Jumilla');
+    await expect(page.locator('#vinos [data-wine="Clio"]')).toBeVisible();
+    await expect(page.locator('#vinos [data-wine][hidden]')).toHaveCount(total - 1);
+    await select.selectOption('');
+    await expect(select).toHaveValue('');
+    await expect(page.locator('#vinos [data-wine][hidden]')).toHaveCount(0);
+    await expect(wines).toHaveCount(total);
+    await card.evaluate((el) => el.scrollIntoView({ block: 'start', behavior: 'instant' }));
+    await expect(card).toHaveCSS('opacity', '1');
+    await expect(wines.first()).toBeInViewport();
+    await expect(page.locator('#vinos [data-wine="Clio"]')).not.toHaveAttribute('hidden', '');
+  });
+
   test('la galería está en la navegación principal', async ({ page }) => {
     await page.goto('/');
     const link = page.locator('#menu-principal a[href="#galeria"]');
