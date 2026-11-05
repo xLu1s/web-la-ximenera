@@ -1,47 +1,28 @@
 ---
-import { Image } from 'astro:assets';
-import { instagram, instagramMeta, instagramCredit } from '../data/gallery';
-// 1) Fotos oficiales de Instagram: todas las de src/assets/instagram/ (metadatos y posts en src/data/gallery.ts)
-const igFiles = import.meta.glob<{ default: ImageMetadata }>('../assets/instagram/*.{jpg,jpeg,png,webp}', { eager: true });
-const igItems = Object.entries(igFiles)
-  .sort(([a], [b]) => a.localeCompare(b))
-  .map(([path, mod]) => {
-    const file = path.split('/').pop()!;
-    return { src: mod.default, alt: instagramMeta[file]?.alt ?? 'Plato de La Ximenera', credit: instagramCredit, official: true };
-  });
-// 2) Fotos públicas de clientes (TripAdvisor/Sluurpy), provisionales. Fuentes en src/data/site.ts.
-import pulpo from '../assets/photos/pulpo-brasa.jpg';
-import tataki from '../assets/photos/tataki-atun.jpg';
-import almejas from '../assets/photos/almejas.jpg';
-import tartar from '../assets/photos/tartar.jpg';
-import postre from '../assets/photos/postre.jpg';
-const clientItems = [
-  { src: pulpo, alt: 'Pulpo a la brasa con pimientos y tostas' },
-  { src: tataki, alt: 'Tataki de atún' },
-  { src: almejas, alt: 'Almejas en salsa' },
-  { src: tartar, alt: 'Tartar con algas' },
-  { src: postre, alt: 'Postre con nata y frutos secos' },
-].map((i) => ({ ...i, credit: 'Foto de cliente · provisional', official: false }));
-const items = [...igItems, ...clientItems];
+import type { PublicContent } from '../lib/content';
+import { publicLang, t } from '../i18n/public';
+interface Props { items: PublicContent['gallery'] }
+const items = Astro.props.items.filter((i) => i.visible && i.url);
+const lang = publicLang(Astro.locals.lang);
 ---
-<section class="section gallery" aria-labelledby="gallery-title">
+<section id="galeria" class="section gallery" aria-labelledby="gallery-title">
   <div class="container gallery__head reveal">
     <div>
-      <p class="eyebrow">Galería</p>
-      <h2 id="gallery-title">Del fuego <em>a la mesa</em></h2>
+      <p class="eyebrow">{t(lang, 'gallery.eyebrow')}</p>
+      <h2 id="gallery-title" set:html={t(lang, 'gallery.title')} />
     </div>
     <div class="gallery__nav">
-      <button type="button" class="round-btn" data-gal-prev aria-label="Foto anterior">‹</button>
-      <button type="button" class="round-btn" data-gal-next aria-label="Foto siguiente">›</button>
+      <button type="button" class="round-btn" data-gal-prev aria-label={t(lang, 'gallery.prev')}>‹</button>
+      <button type="button" class="round-btn" data-gal-next aria-label={t(lang, 'gallery.next')}>›</button>
     </div>
   </div>
-  <ul class="gallery__track" role="list" data-gal-track tabindex="0" aria-label="Carrusel de fotos">
+  <ul class="gallery__track" role="list" data-gal-track tabindex="0" aria-label={t(lang, 'gallery.carousel')}>
     {items.map((it) => (
-      <li class="gallery__item">
-        <Image src={it.src} widths={[320, 520, 760]} sizes="(min-width: 860px) 30vw, 78vw" alt={it.alt} loading="lazy" />
-        <span class:list={['gallery__tag', { 'gallery__tag--client': !it.official }]}>{it.credit}</span>
+      <li class="gallery__item" data-gallery-item>
+        {it.media_type === 'video'
+          ? <video src={it.url} controls muted playsinline preload="metadata" aria-label={it.caption}></video>
+          : <img src={it.url} alt={it.caption} loading="lazy" decoding="async" />}
       </li>
     ))}
   </ul>
-  <p class="container gallery__credit">Fotos oficiales de <a href={instagram.url} target="_blank" rel="noopener">{instagram.handle}</a>. Las marcadas como «foto de cliente» son públicas (TripAdvisor / Sluurpy) y provisionales, pendientes de permiso.</p>
 </section>

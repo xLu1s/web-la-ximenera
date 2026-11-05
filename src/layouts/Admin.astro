@@ -1,0 +1,85 @@
+---
+import '../styles/admin.css';
+import { adminLang, ta, type AdminKey } from '../i18n/admin';
+interface Props { title: string; section?: string; bare?: boolean }
+const { title, section = '', bare = false } = Astro.props;
+const lang = adminLang(Astro.locals.adminLang);
+const ok = Astro.url.searchParams.get('ok');
+const err = Astro.url.searchParams.get('err');
+const nav: [string, AdminKey][] = [
+  ['reservas', 'nav.reservas'], ['carta', 'nav.carta'], ['vinos', 'nav.vinos'], ['menus', 'nav.menus'], ['galeria', 'nav.galeria'], ['ajustes', 'nav.ajustes'],
+];
+const user = Astro.locals.user;
+const langHref = (code: string) => {
+  const u = new URL(Astro.url);
+  u.searchParams.set('admin_lang', code);
+  return u.pathname + u.search;
+};
+const htmlLang = lang === 'zh' ? 'zh-Hans' : lang;
+---
+<!doctype html>
+<html lang={htmlLang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title} · Panel La Ximenera</title>
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+    {lang === 'zh' && <link rel="preconnect" href="https://fonts.googleapis.com" />}
+    {lang === 'zh' && <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />}
+    {lang === 'zh' && <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet" />}
+  </head>
+  <body class="adm">
+    {!bare && (
+      <header class="adm__top">
+        <a class="adm__brand" href="/admin/reservas"><img src="/logo.svg" alt="" width="28" height="28" /> {ta(lang, 'brand')}</a>
+        <div class="adm__tools">
+          <span class="adm__langs" role="group" aria-label={ta(lang, 'lang')}>
+            <a href={langHref('es')} hreflang="es" lang="es" aria-current={lang === 'es' ? 'true' : undefined}>ES</a>
+            <a href={langHref('zh')} hreflang="zh" lang="zh" aria-current={lang === 'zh' ? 'true' : undefined}>中文</a>
+          </span>
+          <button type="button" class="adm__toggle" aria-expanded="false" aria-controls="adm-nav" data-adm-toggle>{ta(lang, 'menu')}</button>
+        </div>
+        <nav id="adm-nav" class="adm__nav" aria-label={ta(lang, 'nav.aria')} data-adm-nav>
+            {nav.map(([k, label]) => <a href={`/admin/${k}`} aria-current={section === k ? 'page' : undefined}>{ta(lang, label)}</a>)}
+            <a href="/" target="_blank">{ta(lang, 'nav.web')}</a>
+            <form method="post" action="/admin/salir"><button type="submit" class="adm__logout">{ta(lang, 'nav.logout')}{user?.email ? ` (${user.email})` : ''}</button></form>
+        </nav>
+      </header>
+    )}
+    {bare && (
+      <p class="adm__langs adm__langs--bare" role="group" aria-label={ta(lang, 'lang')}>
+        <a href={langHref('es')} hreflang="es" lang="es" aria-current={lang === 'es' ? 'true' : undefined}>ES</a>
+        <a href={langHref('zh')} hreflang="zh" lang="zh" aria-current={lang === 'zh' ? 'true' : undefined}>中文</a>
+      </p>
+    )}
+    <main class:list={['adm__main', { 'adm__main--bare': bare }]}>
+      <h1>{title}</h1>
+      {ok && <p class="adm__flash adm__flash--ok" role="status">{ok}</p>}
+      {err && <p class="adm__flash adm__flash--err" role="alert">{err}</p>}
+      <slot />
+    </main>
+    <script>
+      const t = document.querySelector('[data-adm-toggle]');
+      t?.addEventListener('click', () => {
+        const open = t.getAttribute('aria-expanded') !== 'true';
+        t.setAttribute('aria-expanded', String(open));
+        document.querySelector('[data-adm-nav]')?.classList.toggle('is-open', open);
+      });
+      document.addEventListener('submit', (e) => {
+        const f = e.target as HTMLFormElement;
+        const msg = (e.submitter as HTMLElement | null)?.dataset.confirm ?? f.dataset.confirm;
+        if (msg && !confirm(msg)) e.preventDefault();
+      });
+    </script>
+  </body>
+</html>
+<style is:global>
+  html[lang='zh-Hans'] body.adm { font-family: 'Noto Sans SC', system-ui, sans-serif; }
+  .adm__tools { display: flex; align-items: center; gap: .5rem; margin-left: auto; }
+  .adm__langs { display: inline-flex; gap: .25rem; align-items: center; }
+  .adm__langs a { padding: .15rem .4rem; color: #fff !important; text-decoration: none; border: 1px solid rgb(255 255 255 / .4); border-radius: 4px; font-size: .78rem; }
+  .adm__langs a[aria-current='true'] { background: var(--a-gold); color: var(--a-ink) !important; border-color: var(--a-gold); }
+  .adm__langs--bare { justify-content: flex-end; max-width: 420px; margin: 1rem auto 0; padding: 0 1rem; }
+  .adm__langs--bare a { color: var(--a-ink) !important; border-color: var(--a-line); }
+</style>

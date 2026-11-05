@@ -1,22 +1,32 @@
 ---
-import { site } from '../data/site';
 import { publicUrl } from '../lib/base';
+import { publicLang, t } from '../i18n/public';
+interface Props { hasSpecials?: boolean }
+const { hasSpecials = false } = Astro.props;
+const lang = publicLang(Astro.locals.lang);
 ---
 <header class="header" data-header>
   <div class="container header__inner">
-    <a href="#inicio" class="brand" aria-label="La Ximenera, inicio">
+    <a href="/#inicio" class="brand" aria-label="La Ximenera, inicio">
       <img src={publicUrl('logo.svg')} alt="" width="36" height="36" />
       <span>La Ximenera</span>
     </a>
     <button class="nav-toggle" aria-expanded="false" aria-controls="menu-principal" data-nav-toggle>
-      <span class="sr-only">Abrir menú</span><span class="nav-toggle__bar"></span>
+      <span class="sr-only">{t(lang, 'nav.open')}</span><span class="nav-toggle__bar"></span>
     </button>
-    <nav id="menu-principal" class="nav" aria-label="Principal" data-nav>
-      <a href="#nosotros">Nosotros</a>
-      <a href="#carta">Carta</a>
-      <a href="#horario">Horario</a>
-      <a href="#ubicacion">Ubicación</a>
-      <a class="btn btn--small" href={`tel:${site.phoneE164}`}>Reservar</a>
+    <nav id="menu-principal" class="nav" aria-label={t(lang, 'nav.main')} data-nav>
+      <a href="#nosotros">{t(lang, 'nav.nosotros')}</a>
+      {hasSpecials && <a href="#menus-especiales">{t(lang, 'nav.especiales')}</a>}
+      <a href="#carta">{t(lang, 'nav.carta')}</a>
+      <a href="#vinos">{t(lang, 'nav.vinos')}</a>
+      <a href="#galeria">{t(lang, 'nav.galeria')}</a>
+      <a href="#horario">{t(lang, 'nav.horario')}</a>
+      <a href="#ubicacion">{t(lang, 'nav.ubicacion')}</a>
+      <a class="btn btn--small" href="#reservar">{t(lang, 'nav.reservar')}</a>
+      <span class="lang-switch" role="group" aria-label={t(lang, 'lang.label')}>
+        <a href="?lang=es" hreflang="es" lang="es" data-lang-link="es" aria-current={lang === 'es' ? 'true' : undefined}>ES</a>
+        <a href="?lang=en" hreflang="en" lang="en" data-lang-link="en" aria-current={lang === 'en' ? 'true' : undefined}>EN</a>
+      </span>
     </nav>
   </div>
 </header>

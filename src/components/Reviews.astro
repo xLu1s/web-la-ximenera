@@ -2,13 +2,15 @@
 import { ratings } from '../data/site';
 import { reviews, reviewsSource } from '../data/reviews';
 import Tbc from './Tbc.astro';
+import { publicLang, t } from '../i18n/public';
 const LONG = 260; // a partir de aquí se recorta con "Leer más"
+const lang = publicLang(Astro.locals.lang);
 ---
 <section id="opiniones" class="section reviews" aria-labelledby="reviews-title">
   <div class="container">
     <div class="reveal">
-      <p class="eyebrow">Opiniones</p>
-      <h2 id="reviews-title">Lo que dicen <em>de nosotros</em></h2>
+      <p class="eyebrow">{t(lang, 'reviews.eyebrow')}</p>
+      <h2 id="reviews-title" set:html={t(lang, 'reviews.title')} />
     </div>
     <ul class="ratings" role="list">
       {ratings.map((r) => (
@@ -22,25 +24,25 @@ const LONG = 260; // a partir de aquí se recorta con "Leer más"
     </ul>
 
     {reviews.length > 0 ? (
-      <div class="rv reveal" data-rv aria-roledescription="carrusel" aria-label="Reseñas de clientes en Google">
+      <div class="rv reveal" data-rv data-more={t(lang, 'reviews.more')} data-less={t(lang, 'reviews.less')} aria-roledescription="carrusel" aria-label={t(lang, 'reviews.carousel')}>
         <div class="rv__viewport">
           <ul class="rv__track" role="list" data-rv-track>
             {reviews.map((r, i) => (
-              <li class="rv__slide" data-rv-slide aria-roledescription="diapositiva" aria-label={`${i + 1} de ${reviews.length}`}>
+              <li class="rv__slide" data-rv-slide aria-roledescription={t(lang, 'reviews.slide')} aria-label={`${i + 1} ${t(lang, 'reviews.of')} ${reviews.length}`}>
                 <blockquote class="rv__card">
                   <span class="rv__quote" aria-hidden="true">“</span>
-                  <span class="rv__stars" role="img" aria-label={`${r.rating} de 5 estrellas`}>{'★'.repeat(r.rating)}</span>
+                  <span class="rv__stars" role="img" aria-label={t(lang, 'reviews.stars', { n: r.rating })}>{'★'.repeat(r.rating)}</span>
                   <div class:list={['rv__text', { 'rv__text--long': r.text.length > LONG }]} data-rv-text id={`rv-text-${i}`}>
                     {r.text.split('\n').map((para) => <p>{para}</p>)}
                   </div>
                   {r.text.length > LONG && (
-                    <button type="button" class="rv__more" aria-expanded="false" aria-controls={`rv-text-${i}`} data-rv-more>Leer más</button>
+                    <button type="button" class="rv__more" aria-expanded="false" aria-controls={`rv-text-${i}`} data-rv-more>{t(lang, 'reviews.more')}</button>
                   )}
                   <footer class="rv__meta">
                     <span class="rv__avatar" aria-hidden="true">{r.author.trim().charAt(0).toUpperCase()}</span>
                     <span>
                       <cite class="rv__author">{r.author}</cite>
-                      <span class="rv__date">{r.date} · <a href={reviewsSource.url} target="_blank" rel="noopener">{reviewsSource.label}</a>{r.translated && <span class="rv__badge">Traducida del inglés</span>}</span>
+                      <span class="rv__date">{r.date} · <a href={reviewsSource.url} target="_blank" rel="noopener">{reviewsSource.label}</a>{r.translated && <span class="rv__badge">{t(lang, 'reviews.translated')}</span>}</span>
                     </span>
                   </footer>
                 </blockquote>
@@ -49,13 +51,13 @@ const LONG = 260; // a partir de aquí se recorta con "Leer más"
           </ul>
         </div>
         <div class="rv__controls">
-          <button type="button" class="round-btn" data-rv-prev aria-label="Reseña anterior">‹</button>
-          <div class="rv__dots" role="tablist" aria-label="Elegir reseña">
+          <button type="button" class="round-btn" data-rv-prev aria-label={t(lang, 'reviews.prev')}>‹</button>
+          <div class="rv__dots" role="tablist" aria-label={t(lang, 'reviews.pick')}>
             {reviews.map((_, i) => (
-              <button type="button" class="rv__dot" role="tab" aria-selected={i === 0 ? 'true' : 'false'} aria-label={`Reseña ${i + 1}`} data-rv-dot={i}></button>
+              <button type="button" class="rv__dot" role="tab" aria-selected={i === 0 ? 'true' : 'false'} aria-label={t(lang, 'reviews.n', { n: i + 1 })} data-rv-dot={i}></button>
             ))}
           </div>
-          <button type="button" class="round-btn" data-rv-next aria-label="Reseña siguiente">›</button>
+          <button type="button" class="round-btn" data-rv-next aria-label={t(lang, 'reviews.next')}>›</button>
         </div>
       </div>
     ) : (

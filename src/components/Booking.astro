@@ -1,0 +1,97 @@
+---
+import { site } from '../data/site';
+import { HONEYPOT_FIELD } from '../lib/booking';
+import { todayMadrid } from '../lib/time';
+import { publicLang, t } from '../i18n/public';
+interface Props { maxParty: number }
+const { maxParty } = Astro.props;
+const today = todayMadrid();
+const lang = publicLang(Astro.locals.lang);
+---
+<section id="reservar" class="section contact booking" aria-labelledby="contact-title">
+  <span id="contacto" class="sr-only"></span>
+  <div class="container contact__box reveal">
+    <h2 id="contact-title">{t(lang, 'booking.title')}</h2>
+    <p>{t(lang, 'booking.lead')}</p>
+
+    <form
+      class="bk"
+      data-booking-form
+      method="post"
+      action="/api/reservas"
+      novalidate
+      data-max-party={maxParty}
+      data-lang={lang}
+      data-msg-choose-date={t(lang, 'bk.chooseDate')}
+      data-msg-loading={t(lang, 'bk.loading')}
+      data-msg-none={t(lang, 'bk.none')}
+      data-msg-none-hint={t(lang, 'bk.noneHint')}
+      data-msg-choose-time={t(lang, 'bk.chooseTime')}
+      data-msg-full={t(lang, 'bk.full')}
+      data-msg-load-fail={t(lang, 'bk.loadFail')}
+      data-msg-offline={t(lang, 'bk.offline')}
+      data-msg-consent={t(lang, 'bk.needConsent')}
+      data-msg-date={t(lang, 'bk.needDate')}
+      data-msg-time={t(lang, 'bk.needTime')}
+      data-msg-sending={t(lang, 'bk.sending')}
+      data-msg-fail={t(lang, 'bk.fail')}
+      data-msg-noconn={t(lang, 'bk.noConn')}
+      data-msg-submit={t(lang, 'booking.submit')}
+    >
+      <div class="bk__grid">
+        <label class="bk__field">
+          <span>{t(lang, 'booking.date')}</span>
+          <input type="date" name="date" required min={today} data-bk-date />
+        </label>
+        <label class="bk__field">
+          <span>{t(lang, 'booking.party')}</span>
+          <select name="party" required data-bk-party>
+            {Array.from({ length: maxParty }, (_, i) => i + 1).map((n) => <option value={n} selected={n === 2}>{n} {n === 1 ? t(lang, 'booking.one') : t(lang, 'booking.many')}</option>)}
+          </select>
+        </label>
+        <label class="bk__field bk__field--wide">
+          <span>{t(lang, 'booking.time')}</span>
+          <select name="time" required data-bk-time disabled>
+            <option value="">{t(lang, 'bk.chooseDate')}</option>
+          </select>
+          <small class="bk__hint" data-bk-hint aria-live="polite"></small>
+        </label>
+        <label class="bk__field">
+          <span>{t(lang, 'booking.name')}</span>
+          <input type="text" name="name" required minlength="2" maxlength="100" autocomplete="name" />
+        </label>
+        <label class="bk__field">
+          <span>{t(lang, 'booking.phone')}</span>
+          <input type="tel" name="phone" required autocomplete="tel" inputmode="tel" maxlength="20" placeholder="600 000 000" />
+        </label>
+        <label class="bk__field bk__field--wide">
+          <span>{t(lang, 'booking.email')}</span>
+          <input type="email" name="email" required autocomplete="email" maxlength="254" />
+        </label>
+        <label class="bk__field bk__field--wide">
+          <span>{t(lang, 'booking.notes')} <em>{t(lang, 'booking.optional')}</em></span>
+          <textarea name="notes" rows="2" maxlength="500" placeholder={t(lang, 'booking.notesPh')}></textarea>
+        </label>
+        <div class="bk__hp" aria-hidden="true">
+          <label>{t(lang, 'booking.hp')} <input type="text" name={HONEYPOT_FIELD} tabindex="-1" autocomplete="off" /></label>
+        </div>
+        <label class="bk__consent bk__field--wide">
+          <input type="checkbox" name="consent" value="on" required />
+          <span set:html={t(lang, 'booking.consent')} />
+        </label>
+      </div>
+      <p class="bk__error" role="alert" data-bk-error hidden></p>
+      <button class="btn btn--gold bk__submit" type="submit" data-bk-submit>{t(lang, 'booking.submit')}</button>
+      <noscript><p class="bk__hint">{t(lang, 'booking.noscript')}</p></noscript>
+    </form>
+
+    <div class="bk__ok" data-bk-ok hidden tabindex="-1">
+      <h3>{t(lang, 'booking.okTitle')}</h3>
+      <p data-bk-ok-text></p>
+      <p class="bk__ref">{t(lang, 'booking.ref')} <strong data-bk-ref></strong></p>
+      <p class="bk__hint">{t(lang, 'booking.okHint')}</p>
+    </div>
+    <p class="contact__extra">{t(lang, 'booking.social')} <a href={site.instagram} target="_blank" rel="noopener">Instagram</a> · <a href={site.facebook} target="_blank" rel="noopener">Facebook</a></p>
+  </div>
+</section>
+<script src="../scripts/booking.ts"></script>

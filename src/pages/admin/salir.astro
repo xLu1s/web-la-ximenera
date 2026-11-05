@@ -1,0 +1,13 @@
+---
+export const prerender = false;
+if (Astro.request.method === 'POST') {
+  await Astro.locals.supabase.auth.signOut();
+  return Astro.redirect('/admin/login?ok=' + encodeURIComponent('Has cerrado la sesión.'), 303);
+}
+import Admin from '../../layouts/Admin.astro';
+import { adminLang, ta } from '../../i18n/admin';
+const lang = adminLang(Astro.locals.adminLang);
+---
+<Admin title={ta(lang, 'nav.logout')} bare>
+  <form method="post"><button class="btn" type="submit">{ta(lang, 'nav.logout')}</button></form>
+</Admin>

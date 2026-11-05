@@ -1,29 +1,29 @@
 ---
 import { Image } from 'astro:assets';
-import { instagram, instagramCredit } from '../data/gallery';
+import { publicLang, t } from '../i18n/public';
 // Foto oficial del Instagram @laximenera_restaurante: https://www.instagram.com/p/DcqG3KRI_a1/
 import foto from '../assets/instagram/ig-05.jpg';
+const lang = publicLang(Astro.locals.lang);
 ---
 <section id="nosotros" class="section about" aria-labelledby="about-title">
   <div class="container about__grid">
     <div class="reveal">
-      <p class="eyebrow">Nosotros · Rooftop</p>
-      <h2 id="about-title">Un nuevo espacio singular <em>con encanto</em></h2>
-      <p class="lead">Brasería mediterránea y cocina de producto, en el ático del número 2 de la calle Regiment Biscaia, en Alcoy.</p>
-      <p>En nuestras brasas trabajamos con carnes y pescados nacionales, acompañados de verduras de temporada y patatas baby.</p>
-      <p>Nuestros clientes destacan la sala amplia, con la bodega a la vista, y la terraza exterior.</p>
-      <p>Nuestro nombre —<em>ximenera</em>, chimenea en valenciano— rinde homenaje a las chimeneas que dibujan el perfil industrial de Alcoi.</p>
+      <p class="eyebrow">{t(lang, 'about.eyebrow')}</p>
+      <h2 id="about-title" set:html={t(lang, 'about.title')} />
+      <p class="lead">{t(lang, 'about.lead')}</p>
+      <p>{t(lang, 'about.p1')}</p>
+      <p>{t(lang, 'about.p2')}</p>
+      <p set:html={t(lang, 'about.p3')} />
       <ul class="facts" role="list">
-        <li><strong>Brasería</strong><span>mediterránea</span></li>
-        <li><strong>Producto</strong><span>carnes y pescados nacionales</span></li>
-        <li><strong>Rooftop</strong><span>con terraza en Alcoi</span></li>
+        <li><strong>{t(lang, 'about.f1')}</strong><span>{t(lang, 'about.f1s')}</span></li>
+        <li><strong>{t(lang, 'about.f2')}</strong><span>{t(lang, 'about.f2s')}</span></li>
+        <li><strong>{t(lang, 'about.f3')}</strong><span>{t(lang, 'about.f3s')}</span></li>
       </ul>
     </div>
     <figure class="about__photo reveal" style="--d:.15s">
       <div class="about__frame">
-        <Image src={foto} widths={[400, 640]} sizes="(min-width: 860px) 40vw, 90vw" alt="Carne de vaca a la brasa trinchada sobre tabla con verduras" />
+        <Image src={foto} widths={[400, 640]} sizes="(min-width: 860px) 40vw, 90vw" alt={t(lang, 'about.alt')} />
       </div>
-      <figcaption><a href={instagram.url} target="_blank" rel="noopener">{instagramCredit}</a></figcaption>
     </figure>
   </div>
 </section>

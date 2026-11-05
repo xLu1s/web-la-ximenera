@@ -1,0 +1,121 @@
+---
+export const prerender = false;
+import Admin from '../../layouts/Admin.astro';
+import { WINE_SECTION_ORDER, WINE_TYPES, WINES_PROVISIONAL_MESSAGE, type DenominacionRow, type WineRow } from '../../lib/content';
+import { dbErrorMessage, faction, fbool, fid, fint, fnull, fstr, redirectWith } from '../../lib/admin';
+import { slugify, validateWine } from '../../lib/validate';
+import { adminLang, ta, wineSectionAdmin, wineTypeAdmin } from '../../i18n/admin';
+
+const lang = adminLang(Astro.locals.adminLang);
+const sb = Astro.locals.supabase;
+if (Astro.request.method === 'POST') {
+  const fd = await Astro.request.formData();
+  const action = faction(fd);
+  if (action === 'delete') {
+    const { error, count } = await sb.from('wines').delete({ count: 'exact' }).eq('id', fid(fd)!);
+    if (error || !count) return redirectWith('/admin/vinos', dbErrorMessage(error), 'err');
+    return redirectWith('/admin/vinos', ta(lang, 'wine.deleted'));
+  }
+  let denominacion = fstr(fd, 'denominacion_origen');
+  const nueva = fstr(fd, 'denominacion_nueva').slice(0, 80);
+  if (nueva) {
+    denominacion = nueva;
+    const slug = (slugify(nueva) || 'do').slice(0, 80);
+    const { error } = await sb.from('denominaciones').insert({ slug, name: nueva, sort_order: 100, visible: true });
+    if (error && error.code !== '23505') return redirectWith('/admin/vinos', dbErrorMessage(error), 'err');
+  }
+  const v = validateWine({
+    name: fstr(fd, 'name'), wine_type: fstr(fd, 'wine_type'), origin: fnull(fd, 'origin'), description: fnull(fd, 'description'),
+    price_bottle: fstr(fd, 'price_bottle'), price_glass: fstr(fd, 'price_glass'), sort_order: fint(fd, 'sort_order'), visible: fbool(fd, 'visible'),
+    section: fstr(fd, 'section') || null, denominacion_origen: denominacion || null, recommended: fbool(fd, 'recommended'), recommendation_note: fnull(fd, 'recommendation_note'),
+  });
+  if (!v.ok) return redirectWith('/admin/vinos', v.error, 'err');
+  const { error } = action === 'create'
+    ? await sb.from('wines').insert(v.value)
+    : await sb.from('wines').update(v.value).eq('id', fid(fd)!);
+  if (error) return redirectWith('/admin/vinos', dbErrorMessage(error), 'err');
+  return redirectWith('/admin/vinos', ta(lang, 'wine.saved', { name: v.value.name }));
+}
+const [{ data }, { data: dos }] = await Promise.all([
+  sb.from('wines').select('*').order('wine_type').order('sort_order').order('name').order('id'),
+  sb.from('denominaciones').select('slug, name, sort_order').eq('visible', true).order('sort_order').order('name'),
+]);
+const nextByType: Record<string, number> = {};
+for (const w of data ?? []) nextByType[w.wine_type] = Math.max(nextByType[w.wine_type] ?? 0, w.sort_order);
+for (const k of Object.keys(WINE_TYPES)) nextByType[k] = (nextByType[k] ?? 0) + 1;
+const wines = (data ?? []) as WineRow[];
+const catalog = (dos ?? []) as DenominacionRow[];
+const visibleCount = wines.filter((w) => w.visible).length;
+const euro = (n: number | null) => (n == null ? '' : String(n).replace('.', ','));
+const doOptions = (current: string | null | undefined) => {
+  const names = catalog.map((d) => d.name);
+  return current && !names.includes(current) ? [...names, current] : names;
+};
+---
+<Admin title={ta(lang, 'wine.title')} section="vinos">
+  {visibleCount === 0
+    ? <p class="adm__flash adm__flash--ok" data-wines-status="provisional">{ta(lang, 'wine.provisional', { msg: WINES_PROVISIONAL_MESSAGE })}</p>
+    : <p class="help" data-wines-status="list">{ta(lang, 'wine.count', { n: visibleCount })}</p>}
+  {wines.map((w) => (
+    <form method="post" class:list={['item card', { 'item--hidden': !w.visible }]} data-wine={w.name}>
+      <input type="hidden" name="action" value="save" /><input type="hidden" name="id" value={w.id} />
+      <div class="grid">
+        <label class="f">{ta(lang, 'name')} <input name="name" value={w.name} required maxlength="160" /></label>
+        <label class="f">{ta(lang, 'wine.type')} <select name="wine_type">{Object.keys(WINE_TYPES).map((k) => <option value={k} selected={w.wine_type === k}>{wineTypeAdmin(lang, k)}</option>)}</select></label>
+        <label class="f">{ta(lang, 'wine.section')} <select name="section">{WINE_SECTION_ORDER.map((k) => <option value={k} selected={(w.section || 'joven') === k}>{wineSectionAdmin(lang, k)}</option>)}</select></label>
+        <label class="f">{ta(lang, 'wine.do')}
+          <select name="denominacion_origen">
+            <option value="" selected={!w.denominacion_origen}>{ta(lang, 'wine.doNone')}</option>
+            {doOptions(w.denominacion_origen).map((name) => <option value={name} selected={w.denominacion_origen === name}>{name}</option>)}
+          </select>
+        </label>
+        <label class="f">{ta(lang, 'wine.doNew')} <input name="denominacion_nueva" maxlength="80" /></label>
+        <label class="f">{ta(lang, 'wine.origin')} <input name="origin" value={w.origin ?? ''} maxlength="160" /></label>
+        <label class="f">{ta(lang, 'wine.bottle')} <input name="price_bottle" value={euro(w.price_bottle)} inputmode="decimal" /></label>
+        <label class="f">{ta(lang, 'wine.glass')} <input name="price_glass" value={euro(w.price_glass)} inputmode="decimal" /></label>
+        <label class="f">{ta(lang, 'order')} <input type="number" name="sort_order" min="1" value={w.sort_order} /></label>
+        <label class="f f--wide">{ta(lang, 'wine.note')} <input name="description" value={w.description ?? ''} maxlength="400" /></label>
+        <label class="f f--wide">{ta(lang, 'recNote')} <input name="recommendation_note" value={w.recommendation_note ?? ''} maxlength="200" /></label>
+        <label class="f--check"><input type="checkbox" name="visible" checked={w.visible} /> {ta(lang, 'visible')}</label>
+        <label class="f--check"><input type="checkbox" name="recommended" checked={!!w.recommended} /> {ta(lang, 'recommended')}</label>
+      </div>
+      <div class="actions">
+        <button class="btn btn--small" type="submit">{ta(lang, 'save')}</button>
+        <button class="btn btn--danger btn--small" type="submit" name="action" value="delete" data-confirm={ta(lang, 'wine.confirm', { name: w.name })}>{ta(lang, 'delete')}</button>
+      </div>
+    </form>
+  ))}
+  <form method="post" class="card card--muted" data-new-wine>
+    <h2 style="margin-top:0">{ta(lang, 'wine.add')}</h2>
+    <input type="hidden" name="action" value="create" />
+    <div class="grid">
+      <label class="f">{ta(lang, 'name')} <input name="name" required maxlength="160" /></label>
+      <label class="f">{ta(lang, 'wine.type')} <select name="wine_type" required><option value="">{ta(lang, 'wine.choose')}</option>{Object.keys(WINE_TYPES).map((k) => <option value={k}>{wineTypeAdmin(lang, k)}</option>)}</select></label>
+      <label class="f">{ta(lang, 'wine.section')} <select name="section">{WINE_SECTION_ORDER.map((k) => <option value={k} selected={k === 'joven'}>{wineSectionAdmin(lang, k)}</option>)}</select></label>
+      <label class="f">{ta(lang, 'wine.do')}
+        <select name="denominacion_origen">
+          <option value="">{ta(lang, 'wine.doNone')}</option>
+          {catalog.map((d) => <option value={d.name}>{d.name}</option>)}
+        </select>
+      </label>
+      <label class="f">{ta(lang, 'wine.doNew')} <input name="denominacion_nueva" maxlength="80" /></label>
+      <label class="f">{ta(lang, 'wine.origin')} <input name="origin" maxlength="160" placeholder="D.O. Alicante" /></label>
+      <label class="f">{ta(lang, 'wine.bottle')} <input name="price_bottle" inputmode="decimal" placeholder="18,50" /></label>
+      <label class="f">{ta(lang, 'wine.glass')} <input name="price_glass" inputmode="decimal" placeholder="3,50" /></label>
+      <label class="f">{ta(lang, 'order')} <input type="number" name="sort_order" min="1" placeholder={ta(lang, 'wine.placeholderEnd')} data-next-order={JSON.stringify(nextByType)} /></label>
+      <label class="f f--wide">{ta(lang, 'wine.note')} <input name="description" maxlength="400" /></label>
+      <label class="f f--wide">{ta(lang, 'recNote')} <input name="recommendation_note" maxlength="200" /></label>
+      <label class="f--check"><input type="checkbox" name="visible" checked /> {ta(lang, 'visible')}</label>
+      <label class="f--check"><input type="checkbox" name="recommended" /> {ta(lang, 'recommended')}</label>
+    </div>
+    <div class="actions"><button class="btn" type="submit">{ta(lang, 'wine.add')}</button></div>
+  </form>
+  <script is:inline>
+    (function () {
+      var f = document.querySelector('[data-new-wine]'); if (!f) return;
+      var o = f.querySelector('[data-next-order]'), t = f.querySelector('[name="wine_type"]');
+      var next = JSON.parse(o.dataset.nextOrder || '{}');
+      t.addEventListener('change', function () { if (next[t.value]) o.value = next[t.value]; });
+    })();
+  </script>
+</Admin>

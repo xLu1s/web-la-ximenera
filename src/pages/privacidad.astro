@@ -1,0 +1,25 @@
+---
+export const prerender = false;
+import Legal from '../layouts/Legal.astro';
+import Tbc from '../components/Tbc.astro';
+import { legal } from '../data/legal';
+import { site } from '../data/site';
+---
+<Legal title="Política de privacidad" description="Política de privacidad de La Ximenera (Alcoi): datos de las reservas online.">
+  <p>Última actualización: {legal.lastUpdate}.</p>
+  <h2>Responsable del tratamiento</h2>
+  <p><Tbc label={legal.holder} />, con NIF <Tbc label={legal.taxId} /> y domicilio en <Tbc label={legal.fiscalAddress} />. Establecimiento: La Ximenera, {site.address.street}, {site.address.postalCode} {site.address.city}. Email: <Tbc label={legal.contactEmail} />.</p>
+  <h2>Qué datos tratamos y para qué</h2>
+  <p>Cuando reservas mesa online nos facilitas nombre, teléfono, email, fecha, hora, número de personas y, si quieres, observaciones (por ejemplo, alergias). Los usamos únicamente para gestionar tu reserva: registrarla, enviarte la confirmación y el enlace de cancelación, avisar al restaurante y contactarte si hubiera alguna incidencia con ella.</p>
+  <p>Si en las observaciones nos indicas alergias o intolerancias, solo las usamos para preparar tu visita.</p>
+  <h2>Base jurídica</h2>
+  <p>La gestión de la reserva que nos solicitas (art. 6.1.b del RGPD) y tu consentimiento, que das al marcar la casilla del formulario (art. 6.1.a RGPD). Puedes retirarlo cuando quieras; si lo haces antes de la fecha, la reserva se cancelará.</p>
+  <h2>Cuánto tiempo los conservamos</h2>
+  <p>Mientras sea necesario para gestionar la reserva y, después, durante los plazos legalmente exigibles. Las copias de seguridad cifradas se renuevan y las más antiguas se borran automáticamente.</p>
+  <h2>Quién más accede a los datos</h2>
+  <p>No cedemos tus datos a terceros. Para que la web funcione usamos proveedores que actúan como encargados del tratamiento: Supabase (base de datos; región <Tbc label={legal.supabaseRegion} />), Vercel (alojamiento de la web) y Resend (envío de los emails de reserva). Algunos de ellos pueden tratar datos fuera del Espacio Económico Europeo con las garantías previstas en el RGPD (cláusulas contractuales tipo o marco de privacidad UE-EE. UU.).</p>
+  <h2>Tus derechos</h2>
+  <p>Puedes pedir el acceso, rectificación, supresión, oposición, limitación del tratamiento y portabilidad de tus datos escribiendo a <Tbc label={legal.contactEmail} /> o en el propio restaurante. Si consideras que no hemos atendido bien tu solicitud, puedes reclamar ante la Agencia Española de Protección de Datos (<a href="https://www.aepd.es" target="_blank" rel="noopener">www.aepd.es</a>).</p>
+  <h2>Cookies</h2>
+  <p>Consulta la <a href="/cookies">política de cookies</a>.</p>
+</Legal>
