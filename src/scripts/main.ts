@@ -110,7 +110,9 @@ if (rv) {
   const maxIdx = () => Math.max(0, slides.length - perView());
   const go = (n: number) => {
     idx = n > maxIdx() ? 0 : n < 0 ? maxIdx() : n;
-    rTrack.style.transform = `translateX(-${slides[idx].offsetLeft}px)`;
+    // La primera diapositiva está en 0: leer offsetLeft aquí obliga a maquetar toda la página.
+    const left = idx === 0 ? 0 : slides[idx].offsetLeft;
+    rTrack.style.transform = `translateX(-${left}px)`;
     dots.forEach((d, i) => {
       d.setAttribute('aria-selected', String(i === idx));
       d.hidden = i > maxIdx();

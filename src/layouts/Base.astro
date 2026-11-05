@@ -8,14 +8,14 @@ import { publicLang, t } from '../i18n/public';
 interface Props { title: string; description: string; hours?: OpeningHour[]; structuredData?: boolean; noindex?: boolean }
 const { title, description, hours = FALLBACK_HOURS, structuredData = true, noindex = false } = Astro.props;
 const lang = publicLang(Astro.locals.lang);
-const canonical = new URL(Astro.url.pathname, Astro.site);
-const alternate = (code: 'es' | 'en') => {
-  const u = new URL(canonical);
-  u.searchParams.set('lang', code);
-  return u;
-};
-const ogImage = new URL(publicUrl('og-image.jpg'), Astro.site);
-const menuUrl = new URL(publicUrl('#carta'), Astro.site);
+const origin = Astro.site ?? new URL('https://la-ximenera.vercel.app');
+const esUrl = new URL(Astro.url.pathname, origin);
+const enUrl = new URL(Astro.url.pathname, origin);
+enUrl.searchParams.set('lang', 'en');
+// El español es la URL limpia. El inglés se canoniza a ?lang=en, no a la home en español.
+const canonical = lang === 'en' ? enUrl : esUrl;
+const ogImage = new URL(publicUrl('og-image.jpg'), origin);
+const menuUrl = new URL(publicUrl('#carta'), origin);
 
 // JSON-LD: solo datos confirmados (dirección y horario confirmados por Luis el 22/10/2026).
 // geo: ficha de Google Maps "La Ximenera - Rooftop". Sin aggregateRating: Google no admite valoraciones
@@ -26,7 +26,7 @@ const jsonLd = {
   '@type': 'Restaurant',
   name: site.name,
   alternateName: 'La Ximenera - Rooftop',
-  description: 'Un nuevo espacio singular con encanto. Brasería mediterránea y cocina de producto. Rooftop. Alcoi/Alcoy',
+  description,
   image: ogImage.href,
   url: canonical.href,
   telephone: site.phoneE164,
@@ -55,9 +55,9 @@ const jsonLd = {
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
-    <link rel="alternate" hreflang="es" href={alternate('es')} />
-    <link rel="alternate" hreflang="en" href={alternate('en')} />
-    <link rel="alternate" hreflang="x-default" href={alternate('es')} />
+    <link rel="alternate" hreflang="es" href={esUrl} />
+    <link rel="alternate" hreflang="en" href={enUrl} />
+    <link rel="alternate" hreflang="x-default" href={esUrl} />
     <meta name="theme-color" content="#2B1D14" />
     <link rel="icon" type="image/svg+xml" href={publicUrl('logo.svg')} />
 
@@ -69,10 +69,6 @@ const jsonLd = {
     <meta property="og:url" content={canonical} />
     <meta property="og:image" content={ogImage} />
     <meta name="twitter:card" content="summary_large_image" />
-
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Manrope:wght@400;500;700&display=swap" rel="stylesheet" />
 
     {structuredData && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
     {noindex && <meta name="robots" content="noindex" />}
